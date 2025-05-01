@@ -27,6 +27,7 @@ public class AuthService {
     private final ActivityLogService activityLogService;
     private final ActiveSessionService activeSessionService;
     private final Pending2FALoginRepository pending2FALoginRepository;
+    private final MailService mailService;
 
     // Login (refatorado)
     public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
@@ -54,7 +55,9 @@ public class AuthService {
         history.setDevice(metadataExtractor.detectDevice(userAgent));
         history.setBrowser(metadataExtractor.detectBrowser(userAgent));
         history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
+        history.setSuccess(success);
 
+        loginHistoryRepository.save(history);
 
         if (user.isAccountLocked()) {
             // Checar se passou o tempo de bloqueio (ex: 15 minutos)
@@ -71,22 +74,7 @@ public class AuthService {
             }
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            // Incrementa tentativas
-            int attempts = user.getLoginAttempts() + 1;
-            user.setLoginAttempts(attempts);
 
-            if (attempts >= 5) {
-                user.setAccountLocked(true);
-                user.setAccountLockedAt(LocalDateTime.now());
-
-                // Aqui você pode acionar o e-mail (depois)
-                // mailService.sendAccountLockedEmail(user);
-            }
-
-            userRepository.save(user);
-            throw new RuntimeException("Invalid credentials");
-        }
 
         // Se falhou no user/senha ➔ erro direto
         if (!success) {
