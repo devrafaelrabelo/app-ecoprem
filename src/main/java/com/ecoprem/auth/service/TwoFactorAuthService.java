@@ -51,7 +51,8 @@ public class TwoFactorAuthService {
     public boolean verifyCode(String secret, String code) {
         try {
             long timestep = Instant.now().getEpochSecond() / 30;
-            byte[] keyBytes = Base64.getDecoder().decode(secret);
+            Base32 base32 = new Base32();
+            byte[] keyBytes = base32.decode(secret);
             SecretKeySpec signKey = new SecretKeySpec(keyBytes, "HmacSHA1");
 
             Mac mac = Mac.getInstance("HmacSHA1");
