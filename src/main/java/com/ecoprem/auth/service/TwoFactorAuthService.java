@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.security.SecureRandom;
-import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
@@ -82,4 +81,6 @@ public class TwoFactorAuthService {
             return false;
         }
     }
+
+
 }

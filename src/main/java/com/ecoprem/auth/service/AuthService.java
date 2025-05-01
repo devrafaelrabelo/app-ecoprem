@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,14 +26,13 @@ public class AuthService {
     private final LoginMetadataExtractor metadataExtractor;
     private final ActivityLogService activityLogService;
     private final ActiveSessionService activeSessionService;
+    private final Pending2FALoginRepository pending2FALoginRepository;
 
-
-
-    // Login
+    // Login (refatorado)
     public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        boolean success = false;
         User user = null;
+        boolean success = false;
 
         if (userOpt.isPresent()) {
             user = userOpt.get();
@@ -41,16 +41,16 @@ public class AuthService {
             }
         }
 
-        // Extract metadata
+        // Sempre gravar login attempt (mesmo que falhe)
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
 
         LoginHistory history = new LoginHistory();
         history.setId(UUID.randomUUID());
-        history.setUser(user);  // null se não achou o usuário
-        history.setLoginDate(java.time.LocalDateTime.now());
+        history.setUser(user);  // null se usuário não existe
+        history.setLoginDate(LocalDateTime.now());
         history.setIpAddress(ipAddress);
-        history.setLocation(metadataExtractor.getLocation(ipAddress)); // NOVO
+        history.setLocation(metadataExtractor.getLocation(ipAddress));
         history.setDevice(metadataExtractor.detectDevice(userAgent));
         history.setBrowser(metadataExtractor.detectBrowser(userAgent));
         history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
@@ -58,20 +58,40 @@ public class AuthService {
 
         loginHistoryRepository.save(history);
 
+        // Se falhou no user/senha ➔ erro direto
         if (!success) {
             throw new RuntimeException("Invalid credentials");
         }
 
+        // Se 2FA está ativado ➔ retorna tempToken (não gera token ainda)
+        if (user.isTwoFactorEnabled()) {
+            Pending2FALogin pending = new Pending2FALogin();
+            pending.setId(UUID.randomUUID());
+            pending.setUser(user);
+            pending.setTempToken(UUID.randomUUID().toString());
+            pending.setCreatedAt(LocalDateTime.now());
+            pending.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // expira em 10 min
+
+            pending2FALoginRepository.save(pending);
+
+            return new LoginResponse(
+                    null,  // token ainda não gerado
+                    user.getUsername(),
+                    user.getFullName(),
+                    true,
+                    pending.getTempToken()
+            );
+        }
+
+        // Se NÃO tem 2FA ➔ faz login completo
         String token = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().getName()
         );
 
-        // Gera um UUID para sessionId
+        // Cria ActiveSession
         String sessionId = UUID.randomUUID().toString();
-
-        // Cria ActiveSession com esse sessionId
         activeSessionService.createSession(user, sessionId, servletRequest);
 
         activityLogService.logActivity(user, "Logged in successfully", servletRequest);
@@ -80,7 +100,8 @@ public class AuthService {
                 token,
                 user.getUsername(),
                 user.getFullName(),
-                false
+                false,
+                null
         );
     }
 
@@ -110,8 +131,8 @@ public class AuthService {
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setRole(role);
         newUser.setEmailVerified(false); // default
-        newUser.setCreatedAt(java.time.LocalDateTime.now());
-        newUser.setUpdatedAt(java.time.LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(newUser);
     }

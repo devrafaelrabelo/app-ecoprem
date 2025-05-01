@@ -1,17 +1,23 @@
 package com.ecoprem.auth.controller;
 
+import com.ecoprem.auth.dto.LoginResponse;
+import com.ecoprem.auth.dto.TwoFactorLoginRequest;
 import com.ecoprem.auth.dto.TwoFactorSetupResponse;
 import com.ecoprem.auth.dto.TwoFactorVerifyRequest;
+import com.ecoprem.auth.entity.Pending2FALogin;
 import com.ecoprem.auth.entity.User;
+import com.ecoprem.auth.repository.Pending2FALoginRepository;
+import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.TwoFactorAuthService;
 import com.ecoprem.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth/2fa")
@@ -20,6 +26,8 @@ public class TwoFactorAuthController {
 
     private final TwoFactorAuthService twoFactorAuthService;
     private final UserRepository userRepository;
+    private final Pending2FALoginRepository pending2FALoginRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // Setup: Gera secret + QR code
     @PostMapping("/setup")
@@ -64,4 +72,40 @@ public class TwoFactorAuthController {
         userRepository.save(user);
         return ResponseEntity.ok("2FA disabled successfully");
     }
+
+    @PostMapping("/validate-login")
+    public ResponseEntity<?> validateLogin2FA(@RequestBody TwoFactorLoginRequest request) {
+        Optional<Pending2FALogin> pendingOpt = pending2FALoginRepository.findByTempToken(request.getTempToken());
+        if (pendingOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid or expired token");
+        }
+
+        Pending2FALogin pending = pendingOpt.get();
+
+        // Check expiration
+        if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
+            pending2FALoginRepository.delete(pending);
+            return ResponseEntity.badRequest().body("Expired token");
+        }
+
+        User user = pending.getUser();
+        boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
+
+        if (!validCode) {
+            return ResponseEntity.badRequest().body("Invalid 2FA code");
+        }
+
+        // Gerar token final
+        String token = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getName()
+        );
+
+        // Limpar o tempToken (opcional)
+        pending2FALoginRepository.delete(pending);
+
+        return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getFullName(), true, null));
+    }
+
 }
