@@ -1,0 +1,31 @@
+package com.ecoprem.auth.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "activity_log")
+@Data
+public class ActivityLog {
+
+    @Id
+    private UUID id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(nullable = false)
+    private String activity;
+
+    @Column(name = "activity_date", nullable = false)
+    private LocalDateTime activityDate;
+
+    @Column(name = "ip_address")
+    private String ipAddress;
+
+    private String location;
+}
+
