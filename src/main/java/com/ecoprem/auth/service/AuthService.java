@@ -23,6 +23,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final LoginHistoryRepository loginHistoryRepository;
     private final LoginMetadataExtractor metadataExtractor;
+    private final ActivityLogService activityLogService;
 
 
 
@@ -65,6 +66,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().getName()
         );
+
+        activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
         return new LoginResponse(
                 token,
