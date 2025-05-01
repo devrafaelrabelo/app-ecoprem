@@ -1,5 +1,7 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.entity.BackupCode;
+import com.ecoprem.auth.entity.User;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
@@ -12,6 +14,7 @@ import java.security.SecureRandom;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class TwoFactorAuthService {
@@ -81,6 +84,5 @@ public class TwoFactorAuthService {
             return false;
         }
     }
-
 
 }

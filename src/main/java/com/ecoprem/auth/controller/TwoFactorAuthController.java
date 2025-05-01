@@ -136,4 +136,10 @@ public class TwoFactorAuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/backup-codes/regenerate")
+    public ResponseEntity<?> regenerateBackupCodes(@AuthenticationPrincipal User user) {
+        List<String> codes = backupCodeService.regenerateBackupCodes(user, 10);
+        return ResponseEntity.ok(codes);
+    }
+
 }
