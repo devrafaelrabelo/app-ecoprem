@@ -66,4 +66,10 @@ public class BackupCodeService {
         // Reutiliza o método de geração já existente
         return generateBackupCodes(user, quantity);
     }
+
+    public void deleteAllBackupCodes(User user) {
+        List<BackupCode> codes = backupCodeRepository.findByUser(user);
+        backupCodeRepository.deleteAll(codes);
+    }
+
 }

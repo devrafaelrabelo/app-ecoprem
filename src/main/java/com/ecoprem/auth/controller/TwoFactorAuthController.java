@@ -66,12 +66,16 @@ public class TwoFactorAuthController {
     }
 
     // Desativa 2FA
-    @PostMapping("/disable")
-    public ResponseEntity<?> disable2FA(@AuthenticationPrincipal User user) {
+    @PostMapping("/2fa/disable")
+    public ResponseEntity<?> disableTwoFactor(@AuthenticationPrincipal User user) {
         user.setTwoFactorEnabled(false);
         user.setTwoFactorSecret(null);
         userRepository.save(user);
-        return ResponseEntity.ok("2FA disabled successfully");
+
+        // Limpa os backup codes
+        backupCodeService.deleteAllBackupCodes(user);
+
+        return ResponseEntity.ok("2FA disabled and backup codes removed.");
     }
 
     @PostMapping("/validate-login")
@@ -138,6 +142,10 @@ public class TwoFactorAuthController {
 
     @PostMapping("/backup-codes/regenerate")
     public ResponseEntity<?> regenerateBackupCodes(@AuthenticationPrincipal User user) {
+        if (!user.isTwoFactorEnabled()) {
+            return ResponseEntity.badRequest().body("2FA is not enabled for this account.");
+        }
+
         List<String> codes = backupCodeService.regenerateBackupCodes(user, 10);
         return ResponseEntity.ok(codes);
     }
