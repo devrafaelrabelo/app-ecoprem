@@ -106,6 +106,12 @@ public class User {
     @Column(name = "manager_id")
     private UUID managerId;
 
+    @Column(name = "two_factor_secret")
+    private String twoFactorSecret;
+
+    @Column(name = "two_factor_enabled")
+    private boolean twoFactorEnabled;
+
     // RELACIONAMENTOS
     @ManyToOne
     @JoinColumn(name = "role_id")
