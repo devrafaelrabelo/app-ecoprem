@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.InetAddress;
+
 @Component
 public class LoginMetadataExtractor {
 
@@ -63,6 +65,16 @@ public class LoginMetadataExtractor {
             }
         } catch (Exception e) {
             System.out.println("Failed to get location for IP " + ipAddress);
+            return "Unknown";
+        }
+    }
+
+    public String getHostname(String ipAddress) {
+        try {
+            InetAddress inetAddress = InetAddress.getByName(ipAddress);
+            return inetAddress.getHostName();
+        } catch (Exception e) {
+            System.out.println("Failed to resolve hostname for IP: " + ipAddress);
             return "Unknown";
         }
     }

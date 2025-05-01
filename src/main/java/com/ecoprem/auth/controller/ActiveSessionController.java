@@ -25,13 +25,17 @@ public class ActiveSessionController {
 
         List<ActiveSessionResponse> response = sessions.stream().map(session -> {
             ActiveSessionResponse dto = new ActiveSessionResponse();
-            dto.setSessionId(session.getSessionId() != null ? String.valueOf(UUID.fromString(session.getSessionId())) : null);
+            dto.setSessionId(session.getSessionId() != null ? UUID.fromString(session.getSessionId()) : null);
             dto.setDevice(session.getDevice());
             dto.setBrowser(session.getBrowser());
             dto.setOperatingSystem(session.getOperatingSystem());
             dto.setIpAddress(session.getIpAddress());
             dto.setCreatedAt(session.getCreatedAt());
             dto.setExpiresAt(session.getExpiresAt());
+
+            String deviceName = session.getBrowser() + " on " + session.getOperatingSystem();
+            dto.setDeviceName(deviceName);
+
             return dto;
         }).toList();
 
