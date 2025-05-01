@@ -24,6 +24,7 @@ public class AuthService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final LoginMetadataExtractor metadataExtractor;
     private final ActivityLogService activityLogService;
+    private final ActiveSessionService activeSessionService;
 
 
 
@@ -66,6 +67,10 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().getName()
         );
+
+        // Cria a sessão ativa
+        activeSessionService.createSession(user, token, servletRequest);
+
 
         activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
