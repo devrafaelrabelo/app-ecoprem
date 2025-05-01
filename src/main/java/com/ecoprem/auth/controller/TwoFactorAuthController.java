@@ -1,9 +1,6 @@
 package com.ecoprem.auth.controller;
 
-import com.ecoprem.auth.dto.LoginResponse;
-import com.ecoprem.auth.dto.TwoFactorLoginRequest;
-import com.ecoprem.auth.dto.TwoFactorSetupResponse;
-import com.ecoprem.auth.dto.TwoFactorVerifyRequest;
+import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.BackupCode;
 import com.ecoprem.auth.entity.Pending2FALogin;
 import com.ecoprem.auth.entity.User;
@@ -125,7 +122,18 @@ public class TwoFactorAuthController {
     @GetMapping("/backup-codes")
     public ResponseEntity<?> listBackupCodes(@AuthenticationPrincipal User user) {
         List<BackupCode> codes = backupCodeService.getBackupCodes(user);
-        return ResponseEntity.ok(codes);
+
+        List<BackupCodeResponse> response = codes.stream()
+                .map(code -> new BackupCodeResponse(
+                        code.getId(),
+                        code.getCode(),
+                        code.isUsed(),
+                        code.getCreatedAt(),
+                        code.getUsedAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 
 }
