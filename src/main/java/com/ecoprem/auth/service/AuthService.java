@@ -54,9 +54,39 @@ public class AuthService {
         history.setDevice(metadataExtractor.detectDevice(userAgent));
         history.setBrowser(metadataExtractor.detectBrowser(userAgent));
         history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
-        history.setSuccess(success);
 
-        loginHistoryRepository.save(history);
+
+        if (user.isAccountLocked()) {
+            // Checar se passou o tempo de bloqueio (ex: 15 minutos)
+            if (user.getAccountLockedAt() != null &&
+                    user.getAccountLockedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
+
+                // Resetar o lock após expiração
+                user.setAccountLocked(false);
+                user.setLoginAttempts(0);
+                user.setAccountLockedAt(null);
+                userRepository.save(user);
+            } else {
+                throw new RuntimeException("Account is locked. Please try again later.");
+            }
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            // Incrementa tentativas
+            int attempts = user.getLoginAttempts() + 1;
+            user.setLoginAttempts(attempts);
+
+            if (attempts >= 5) {
+                user.setAccountLocked(true);
+                user.setAccountLockedAt(LocalDateTime.now());
+
+                // Aqui você pode acionar o e-mail (depois)
+                // mailService.sendAccountLockedEmail(user);
+            }
+
+            userRepository.save(user);
+            throw new RuntimeException("Invalid credentials");
+        }
 
         // Se falhou no user/senha ➔ erro direto
         if (!success) {

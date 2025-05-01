@@ -112,6 +112,9 @@ public class User {
     @Column(name = "two_factor_enabled")
     private boolean twoFactorEnabled;
 
+    @Column(name = "account_locked_at")
+    private LocalDateTime accountLockedAt;
+
     // RELACIONAMENTOS
     @ManyToOne
     @JoinColumn(name = "role_id")
