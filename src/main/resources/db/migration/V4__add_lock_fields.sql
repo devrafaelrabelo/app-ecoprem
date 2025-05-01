@@ -1,4 +1,2 @@
 ALTER TABLE users
-ADD COLUMN login_attempts INTEGER DEFAULT 0,
-ADD COLUMN account_locked BOOLEAN DEFAULT FALSE,
 ADD COLUMN account_locked_at TIMESTAMP NULL;
