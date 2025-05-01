@@ -1,10 +1,10 @@
 package com.ecoprem.auth.service;
 
 import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import org.apache.commons.codec.binary.Base32;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -22,7 +22,8 @@ public class TwoFactorAuthService {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[20];  // 160 bits
         random.nextBytes(bytes);
-        return Base64.getEncoder().withoutPadding().encodeToString(bytes);
+        Base32 base32 = new Base32();
+        return base32.encodeToString(bytes).replace("=", "");
     }
 
     // Gera URL do Google Authenticator (para QR code)
