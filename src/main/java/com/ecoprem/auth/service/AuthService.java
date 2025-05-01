@@ -32,39 +32,33 @@ public class AuthService {
     // Login (refatorado)
     public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        User user = null;
-        boolean success = false;
-
-        if (userOpt.isPresent()) {
-            user = userOpt.get();
-            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                success = true;
-            }
-        }
-
-        // Sempre gravar login attempt (mesmo que falhe)
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
 
-        LoginHistory history = new LoginHistory();
-        history.setId(UUID.randomUUID());
-        history.setUser(user);  // null se usuário não existe
-        history.setLoginDate(LocalDateTime.now());
-        history.setIpAddress(ipAddress);
-        history.setLocation(metadataExtractor.getLocation(ipAddress));
-        history.setDevice(metadataExtractor.detectDevice(userAgent));
-        history.setBrowser(metadataExtractor.detectBrowser(userAgent));
-        history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
-        history.setSuccess(success);
+        // Se usuário não existe ➔ grava tentativa e retorna erro
+        if (userOpt.isEmpty()) {
+            LoginHistory history = new LoginHistory();
+            history.setId(UUID.randomUUID());
+            history.setUser(null);  // user não existe
+            history.setLoginDate(LocalDateTime.now());
+            history.setIpAddress(ipAddress);
+            history.setLocation(metadataExtractor.getLocation(ipAddress));
+            history.setDevice(metadataExtractor.detectDevice(userAgent));
+            history.setBrowser(metadataExtractor.detectBrowser(userAgent));
+            history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
+            history.setSuccess(false);
+            loginHistoryRepository.save(history);
 
-        loginHistoryRepository.save(history);
+            throw new RuntimeException("Invalid credentials");
+        }
 
+        User user = userOpt.get();
+
+        // 1️⃣ Checar se a conta está bloqueada
         if (user.isAccountLocked()) {
-            // Checar se passou o tempo de bloqueio (ex: 15 minutos)
             if (user.getAccountLockedAt() != null &&
                     user.getAccountLockedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
-
-                // Resetar o lock após expiração
+                // Desbloquear após tempo expirar
                 user.setAccountLocked(false);
                 user.setLoginAttempts(0);
                 user.setAccountLockedAt(null);
@@ -74,12 +68,47 @@ public class AuthService {
             }
         }
 
+        // 2️⃣ Validar senha
+        boolean success = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
+        // 3️⃣ Gravar tentativa no LoginHistory
+        LoginHistory history = new LoginHistory();
+        history.setId(UUID.randomUUID());
+        history.setUser(user);
+        history.setLoginDate(LocalDateTime.now());
+        history.setIpAddress(ipAddress);
+        history.setLocation(metadataExtractor.getLocation(ipAddress));
+        history.setDevice(metadataExtractor.detectDevice(userAgent));
+        history.setBrowser(metadataExtractor.detectBrowser(userAgent));
+        history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
+        history.setSuccess(success);
+        loginHistoryRepository.save(history);
 
-        // Se falhou no user/senha ➔ erro direto
+        // 4️⃣ Se senha incorreta ➔ incrementa tentativas e bloqueia se necessário
         if (!success) {
-            throw new RuntimeException("Invalid credentials");
+            int attempts = user.getLoginAttempts() + 1;
+            user.setLoginAttempts(attempts);
+
+            if (attempts >= 5 && !user.isAccountLocked()) {
+                user.setAccountLocked(true);
+                user.setAccountLockedAt(LocalDateTime.now());
+
+                // Enviar o e-mail de notificação
+                mailService.sendAccountLockedEmail(user.getEmail(), user.getUsername());
+            }
+
+            userRepository.save(user);
+
+            if (user.isAccountLocked()) {
+                throw new RuntimeException("Account is locked. Please check your email or try again later.");
+            } else {
+                throw new RuntimeException("Invalid credentials");
+            }
         }
+
+        // 5️⃣ Login sucesso ➔ resetar tentativas
+        user.setLoginAttempts(0);
+        userRepository.save(user);
 
         // Se 2FA está ativado ➔ retorna tempToken (não gera token ainda)
         if (user.isTwoFactorEnabled()) {
