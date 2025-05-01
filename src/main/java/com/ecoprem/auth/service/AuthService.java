@@ -68,9 +68,11 @@ public class AuthService {
                 user.getRole().getName()
         );
 
-        // Cria a sessão ativa
-        activeSessionService.createSession(user, token, servletRequest);
+        // Gera um UUID para sessionId
+        String sessionId = UUID.randomUUID().toString();
 
+        // Cria ActiveSession com esse sessionId
+        activeSessionService.createSession(user, sessionId, servletRequest);
 
         activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
