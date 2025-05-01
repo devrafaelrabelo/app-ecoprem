@@ -117,12 +117,6 @@ public class TwoFactorAuthController {
         return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getFullName(), true, null));
     }
 
-    @PostMapping("/backup-codes/generate")
-    public ResponseEntity<?> generateBackupCodes(@AuthenticationPrincipal User user) {
-        List<String> codes = backupCodeService.generateBackupCodes(user, 10);
-        return ResponseEntity.ok(codes);
-    }
-
     @GetMapping("/backup-codes")
     public ResponseEntity<?> listBackupCodes(@AuthenticationPrincipal User user) {
         List<BackupCode> codes = backupCodeService.getBackupCodes(user);
@@ -138,6 +132,12 @@ public class TwoFactorAuthController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/backup-codes/generate")
+    public ResponseEntity<?> generateBackupCodes(@AuthenticationPrincipal User user) {
+        List<String> codes = backupCodeService.generateBackupCodes(user, 10);
+        return ResponseEntity.ok(codes);
     }
 
     @PostMapping("/backup-codes/regenerate")
