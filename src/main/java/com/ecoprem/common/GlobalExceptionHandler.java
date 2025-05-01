@@ -1,0 +1,151 @@
+package com.ecoprem.common;
+
+import com.ecoprem.auth.exception.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // Trata erros de validação de campos (@Valid)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, Object> errors = new HashMap<>();
+        errors.put("status", 400);
+        errors.put("message", "Validation failed");
+
+        errors.put("errors", ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("field", fieldError.getField());
+                    error.put("message", fieldError.getDefaultMessage());
+                    return error;
+                })
+                .collect(Collectors.toList())
+        );
+
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    // Trata request body inválido ou ausente (ex: JSON faltando)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("status", 400);
+        error.put("message", "Invalid or missing request body");
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<?> handleAccountLocked(AccountLockedException ex) {
+        ApiError error = new ApiError(
+                403,
+                "AccountLocked",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null  // Podemos adicionar detalhes como lockTime se quiser
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<?> handleInvalidCredentials(InvalidCredentialsException ex) {
+        ApiError error = new ApiError(
+                401,
+                "InvalidCredentials",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<?> handleUserNotFound(UserNotFoundException ex) {
+        ApiError error = new ApiError(
+                404,
+                "UserNotFound",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(TwoFactorRequiredException.class)
+    public ResponseEntity<?> handleTwoFactorRequired(TwoFactorRequiredException ex) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("tempToken", ex.getTempToken());
+
+        ApiError error = new ApiError(
+                403,
+                "TwoFactorRequired",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                details
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(AccountSuspendedException.class)
+    public ResponseEntity<?> handleAccountSuspended(AccountSuspendedException ex) {
+        ApiError error = new ApiError(
+                403,
+                "AccountSuspended",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<?> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+        ApiError error = new ApiError(
+                409,
+                "EmailAlreadyExists",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<?> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
+        ApiError error = new ApiError(
+                409,
+                "UsernameAlreadyExists",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<?> handleRoleNotFound(RoleNotFoundException ex) {
+        ApiError error = new ApiError(
+                404,
+                "RoleNotFound",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+}

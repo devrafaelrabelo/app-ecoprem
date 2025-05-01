@@ -2,6 +2,7 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.*;
+import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
@@ -35,26 +36,26 @@ public class AuthService {
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
 
-        // Se usuário não existe ➔ grava tentativa e retorna erro
+        // Se usuário não existe ➔ grava tentativa e retorna erro padronizado
         if (userOpt.isEmpty()) {
-            LoginHistory history = new LoginHistory();
-            history.setId(UUID.randomUUID());
-            history.setUser(null);  // user não existe
-            history.setLoginDate(LocalDateTime.now());
-            history.setIpAddress(ipAddress);
-            history.setLocation(metadataExtractor.getLocation(ipAddress));
-            history.setDevice(metadataExtractor.detectDevice(userAgent));
-            history.setBrowser(metadataExtractor.detectBrowser(userAgent));
-            history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
-            history.setSuccess(false);
-            loginHistoryRepository.save(history);
-
-            throw new RuntimeException("Invalid credentials");
+            recordLoginAttempt(null, ipAddress, userAgent, false);
+            throw new InvalidCredentialsException("The email or password you entered is incorrect.");
         }
 
         User user = userOpt.get();
 
-        // 1️⃣ Checar se a conta está bloqueada
+        // ✅ Verifica se email está verificado
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Please verify your email before logging in.");
+        }
+
+        // ✅ Verifica se a conta está suspensa
+        if (user.getUserStatus() != null &&
+                "suspended".equalsIgnoreCase(user.getUserStatus().getStatus())) {
+            throw new AccountSuspendedException("Your account has been suspended. Please contact support.");
+        }
+
+        // ✅ Checa se a conta está bloqueada
         if (user.isAccountLocked()) {
             if (user.getAccountLockedAt() != null &&
                     user.getAccountLockedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
@@ -64,27 +65,17 @@ public class AuthService {
                 user.setAccountLockedAt(null);
                 userRepository.save(user);
             } else {
-                throw new RuntimeException("Account is locked. Please try again later.");
+                throw new AccountLockedException("Your account is locked. Please try again later.");
             }
         }
 
-        // 2️⃣ Validar senha
+        // ✅ Valida senha
         boolean success = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-        // 3️⃣ Gravar tentativa no LoginHistory
-        LoginHistory history = new LoginHistory();
-        history.setId(UUID.randomUUID());
-        history.setUser(user);
-        history.setLoginDate(LocalDateTime.now());
-        history.setIpAddress(ipAddress);
-        history.setLocation(metadataExtractor.getLocation(ipAddress));
-        history.setDevice(metadataExtractor.detectDevice(userAgent));
-        history.setBrowser(metadataExtractor.detectBrowser(userAgent));
-        history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
-        history.setSuccess(success);
-        loginHistoryRepository.save(history);
+        // ✅ Grava tentativa (sempre)
+        recordLoginAttempt(user, ipAddress, userAgent, success);
 
-        // 4️⃣ Se senha incorreta ➔ incrementa tentativas e bloqueia se necessário
+        // Se senha incorreta ➔ incrementa tentativas e bloqueia se necessário
         if (!success) {
             int attempts = user.getLoginAttempts() + 1;
             user.setLoginAttempts(attempts);
@@ -93,20 +84,20 @@ public class AuthService {
                 user.setAccountLocked(true);
                 user.setAccountLockedAt(LocalDateTime.now());
 
-                // Enviar o e-mail de notificação
+                // Enviar e-mail de bloqueio
                 mailService.sendAccountLockedEmail(user.getEmail(), user.getUsername());
             }
 
             userRepository.save(user);
 
             if (user.isAccountLocked()) {
-                throw new RuntimeException("Account is locked. Please check your email or try again later.");
+                throw new AccountLockedException("Your account is locked. Please try again later.");
             } else {
-                throw new RuntimeException("Invalid credentials");
+                throw new InvalidCredentialsException("The email or password you entered is incorrect.");
             }
         }
 
-        // 5️⃣ Login sucesso ➔ resetar tentativas
+        // ✅ Login sucesso ➔ resetar tentativas
         user.setLoginAttempts(0);
         userRepository.save(user);
 
@@ -121,11 +112,8 @@ public class AuthService {
 
             pending2FALoginRepository.save(pending);
 
-            return new LoginResponse(
-                    null,  // token ainda não gerado
-                    user.getUsername(),
-                    user.getFullName(),
-                    true,
+            throw new TwoFactorRequiredException(
+                    "Two-factor authentication is required.",
                     pending.getTempToken()
             );
         }
@@ -152,17 +140,32 @@ public class AuthService {
         );
     }
 
-    // Register
+    // 🔧 Extrai a lógica de gravação de LoginHistory para evitar duplicação
+    private void recordLoginAttempt(User user, String ipAddress, String userAgent, boolean success) {
+        LoginHistory history = new LoginHistory();
+        history.setId(UUID.randomUUID());
+        history.setUser(user);
+        history.setLoginDate(LocalDateTime.now());
+        history.setIpAddress(ipAddress);
+        history.setLocation(metadataExtractor.getLocation(ipAddress));
+        history.setDevice(metadataExtractor.detectDevice(userAgent));
+        history.setBrowser(metadataExtractor.detectBrowser(userAgent));
+        history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
+        history.setSuccess(success);
+        loginHistoryRepository.save(history);
+    }
+
+    // Register (mantido igual)
     public void register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use");
+            throw new EmailAlreadyExistsException("The email is already in use.");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already in use");
+            throw new UsernameAlreadyExistsException("The username is already in use.");
         }
 
         Role role = roleRepository.findByName(request.getRole())
-                .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole()));
+                .orElseThrow(() -> new RoleNotFoundException("Role not found: " + request.getRole()));
 
         User newUser = new User();
         newUser.setId(UUID.randomUUID());
@@ -182,20 +185,5 @@ public class AuthService {
         newUser.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(newUser);
-    }
-
-    // Two-Factor Auth (simplificado)
-    public void verifyTwoFactor(TwoFactorRequest request) {
-        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-
-        // TODO: implementar validação real do código 2FA
-        if (!"123456".equals(request.getCode())) {
-            throw new RuntimeException("Invalid 2FA code");
-        }
-
-        // Success: poderia marcar algo no banco, se necessário
     }
 }

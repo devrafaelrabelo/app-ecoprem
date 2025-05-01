@@ -26,10 +26,4 @@ public class AuthController {
         authService.register(request);
         return ResponseEntity.ok().build();
     }
-
-    @PostMapping("/2fa")
-    public ResponseEntity<Void> verifyTwoFactor(@RequestBody TwoFactorRequest request) {
-        authService.verifyTwoFactor(request);
-        return ResponseEntity.ok().build();
-    }
 }

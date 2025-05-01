@@ -29,6 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getServletPath();
+        if (path.startsWith("/api/auth/")) {
+            // Rota pública ➔ ignora o filtro JWT
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -45,11 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userOpt.get();
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        user, null, null  // Aqui você pode passar roles/authorities se quiser mais granularidade
+                        user, null, null
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // Coloca o usuário no contexto de segurança
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
