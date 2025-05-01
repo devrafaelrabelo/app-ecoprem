@@ -4,10 +4,12 @@ import com.ecoprem.auth.dto.LoginResponse;
 import com.ecoprem.auth.dto.TwoFactorLoginRequest;
 import com.ecoprem.auth.dto.TwoFactorSetupResponse;
 import com.ecoprem.auth.dto.TwoFactorVerifyRequest;
+import com.ecoprem.auth.entity.BackupCode;
 import com.ecoprem.auth.entity.Pending2FALogin;
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.repository.Pending2FALoginRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
+import com.ecoprem.auth.service.BackupCodeService;
 import com.ecoprem.auth.service.TwoFactorAuthService;
 import com.ecoprem.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -28,6 +31,7 @@ public class TwoFactorAuthController {
     private final UserRepository userRepository;
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BackupCodeService backupCodeService;
 
     // Setup: Gera secret + QR code
     @PostMapping("/setup")
@@ -91,8 +95,12 @@ public class TwoFactorAuthController {
         User user = pending.getUser();
         boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
 
+        // Se falhar no TOTP, tenta backup code
         if (!validCode) {
-            return ResponseEntity.badRequest().body("Invalid 2FA code");
+            boolean validBackup = backupCodeService.validateBackupCode(user, request.getTwoFactorCode());
+            if (!validBackup) {
+                return ResponseEntity.badRequest().body("Invalid 2FA code");
+            }
         }
 
         // Gerar token final
@@ -106,6 +114,18 @@ public class TwoFactorAuthController {
         pending2FALoginRepository.delete(pending);
 
         return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getFullName(), true, null));
+    }
+
+    @PostMapping("/backup-codes/generate")
+    public ResponseEntity<?> generateBackupCodes(@AuthenticationPrincipal User user) {
+        List<String> codes = backupCodeService.generateBackupCodes(user, 10);
+        return ResponseEntity.ok(codes);
+    }
+
+    @GetMapping("/backup-codes")
+    public ResponseEntity<?> listBackupCodes(@AuthenticationPrincipal User user) {
+        List<BackupCode> codes = backupCodeService.getBackupCodes(user);
+        return ResponseEntity.ok(codes);
     }
 
 }

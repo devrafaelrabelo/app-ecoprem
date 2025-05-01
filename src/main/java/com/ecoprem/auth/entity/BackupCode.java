@@ -2,10 +2,11 @@ package com.ecoprem.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "backup_code")
 @Data
 public class BackupCode {
 
@@ -19,5 +20,12 @@ public class BackupCode {
     @Column(nullable = false)
     private String code;
 
-    private boolean used;
+    @Column(nullable = false)
+    private boolean used = false;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
 }
