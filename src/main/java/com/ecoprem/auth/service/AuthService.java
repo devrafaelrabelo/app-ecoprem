@@ -12,8 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +31,20 @@ public class AuthService {
     private final ActiveSessionService activeSessionService;
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final MailService mailService;
+    private final Map<String, Integer> loginAttemptsPerIp = new ConcurrentHashMap<>();
+    private static final int MAX_ATTEMPTS_PER_MINUTE = 10;
 
     // Login (refatorado)
     public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
+
+        // Limite de tentativas de login por IP
+        loginAttemptsPerIp.merge(ipAddress, 1, Integer::sum);
+        if (loginAttemptsPerIp.get(ipAddress) > MAX_ATTEMPTS_PER_MINUTE) {
+            throw new RateLimitExceededException("Too many login attempts. Please try again later.");
+        }
 
         // Se usuário não existe ➔ grava tentativa e retorna erro padronizado
         if (userOpt.isEmpty()) {
@@ -53,6 +63,11 @@ public class AuthService {
         if (user.getUserStatus() != null &&
                 "suspended".equalsIgnoreCase(user.getUserStatus().getStatus())) {
             throw new AccountSuspendedException("Your account has been suspended. Please contact support.");
+        }
+
+        if (user.getUserStatus() != null &&
+                "deactivated".equalsIgnoreCase(user.getUserStatus().getStatus())) {
+            throw new AccountNotActiveException("Your account is deactivated. Please contact support.");
         }
 
         // ✅ Checa se a conta está bloqueada
@@ -164,8 +179,17 @@ public class AuthService {
             throw new UsernameAlreadyExistsException("The username is already in use.");
         }
 
+        if (!isStrongPassword(request.getPassword())) {
+            throw new PasswordTooWeakException("Password must be at least 8 characters, include uppercase, lowercase letters and a number.");
+        }
+
         Role role = roleRepository.findByName(request.getRole())
                 .orElseThrow(() -> new RoleNotFoundException("Role not found: " + request.getRole()));
+
+        if ("ADMIN".equalsIgnoreCase(request.getRole())) {
+            throw new InvalidRoleAssignmentException("You cannot assign this role.");
+        }
+
 
         User newUser = new User();
         newUser.setId(UUID.randomUUID());
@@ -186,4 +210,14 @@ public class AuthService {
 
         userRepository.save(newUser);
     }
+
+    private boolean isStrongPassword(String password) {
+        if (password.length() < 8) return false;
+        boolean hasUpper = password.matches(".*[A-Z].*");
+        boolean hasLower = password.matches(".*[a-z].*");
+        boolean hasNumber = password.matches(".*\\d.*");
+        return hasUpper && hasLower && hasNumber;
+    }
+
+
 }

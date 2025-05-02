@@ -4,6 +4,9 @@ import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.BackupCode;
 import com.ecoprem.auth.entity.Pending2FALogin;
 import com.ecoprem.auth.entity.User;
+import com.ecoprem.auth.exception.Expired2FATokenException;
+import com.ecoprem.auth.exception.Invalid2FACodeException;
+import com.ecoprem.auth.exception.Invalid2FATokenException;
 import com.ecoprem.auth.repository.Pending2FALoginRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.BackupCodeService;
@@ -80,41 +83,47 @@ public class TwoFactorAuthController {
 
     @PostMapping("/validate-login")
     public ResponseEntity<?> validateLogin2FA(@RequestBody TwoFactorLoginRequest request) {
-        Optional<Pending2FALogin> pendingOpt = pending2FALoginRepository.findByTempToken(request.getTempToken());
-        if (pendingOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid or expired token");
-        }
+        Pending2FALogin pending = pending2FALoginRepository.findByTempToken(request.getTempToken())
+                .orElseThrow(() -> new Invalid2FATokenException("Invalid or expired 2FA token."));
 
-        Pending2FALogin pending = pendingOpt.get();
-
-        // Check expiration
+        // ✅ Checa expiração
         if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
-            pending2FALoginRepository.delete(pending);
-            return ResponseEntity.badRequest().body("Expired token");
+            pending2FALoginRepository.delete(pending);  // cleanup
+            throw new Expired2FATokenException("The 2FA token has expired. Please login again.");
         }
 
         User user = pending.getUser();
+
+        // ✅ Tenta validar código TOTP
         boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
 
         // Se falhar no TOTP, tenta backup code
         if (!validCode) {
             boolean validBackup = backupCodeService.validateBackupCode(user, request.getTwoFactorCode());
             if (!validBackup) {
-                return ResponseEntity.badRequest().body("Invalid 2FA code");
+                throw new Invalid2FACodeException("The 2FA code is incorrect.");
             }
         }
 
-        // Gerar token final
+        // 🔥 Gerar token final
         String token = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().getName()
         );
 
-        // Limpar o tempToken (opcional)
+        // Limpa o tempToken (opcional)
         pending2FALoginRepository.delete(pending);
 
-        return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getFullName(), true, null));
+        return ResponseEntity.ok(
+                new LoginResponse(
+                        token,
+                        user.getUsername(),
+                        user.getFullName(),
+                        true,
+                        null
+                )
+        );
     }
 
     @GetMapping("/backup-codes")

@@ -148,4 +148,71 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(PasswordTooWeakException.class)
+    public ResponseEntity<?> handlePasswordTooWeak(PasswordTooWeakException ex) {
+        ApiError error = new ApiError(
+                400,
+                "PasswordTooWeak",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidRoleAssignmentException.class)
+    public ResponseEntity<?> handleInvalidRoleAssignment(InvalidRoleAssignmentException ex) {
+        ApiError error = new ApiError(
+                403,
+                "InvalidRoleAssignment",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(AccountNotActiveException.class)
+    public ResponseEntity<?> handleAccountNotActive(AccountNotActiveException ex) {
+        ApiError error = new ApiError(
+                403,
+                "AccountNotActive",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<?> handleRateLimitExceeded(RateLimitExceededException ex) {
+        ApiError error = new ApiError(
+                429,
+                "RateLimitExceeded",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    @ExceptionHandler(Invalid2FATokenException.class)
+    public ResponseEntity<?> handleInvalid2FAToken(Invalid2FATokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(Expired2FATokenException.class)
+    public ResponseEntity<?> handleExpired2FAToken(Expired2FATokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(Invalid2FACodeException.class)
+    public ResponseEntity<?> handleInvalid2FACode(Invalid2FACodeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+
 }

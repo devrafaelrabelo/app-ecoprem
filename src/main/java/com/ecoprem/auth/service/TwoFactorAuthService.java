@@ -14,7 +14,6 @@ import java.security.SecureRandom;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
-import java.util.List;
 
 @Service
 public class TwoFactorAuthService {
