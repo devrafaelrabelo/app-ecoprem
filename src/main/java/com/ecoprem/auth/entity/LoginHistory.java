@@ -33,4 +33,7 @@ public class LoginHistory {
     private String operatingSystem;
 
     private boolean success;
+
+    private String failureReason; // opcional, só preenchido se success == false
+
 }
