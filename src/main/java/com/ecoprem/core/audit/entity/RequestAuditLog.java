@@ -24,4 +24,3 @@ public class RequestAuditLog {
 
     private LocalDateTime timestamp;
 }
-s

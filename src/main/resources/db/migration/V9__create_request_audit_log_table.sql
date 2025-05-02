@@ -7,4 +7,3 @@ CREATE TABLE request_audit_log (
     user_agent VARCHAR(1000),
     timestamp TIMESTAMP
 );
-ss
