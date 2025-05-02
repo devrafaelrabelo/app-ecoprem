@@ -17,6 +17,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
+import static com.ecoprem.auth.util.ValidationUtil.isValidEmail;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -36,6 +39,12 @@ public class AuthService {
 
     // Login (refatorado)
     public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
+
+        // ✅ Validar email logo no começo
+        if (!isValidEmail(request.getEmail())) {
+            throw new InvalidRequestException("Invalid email format.");
+        }
+
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
@@ -210,14 +219,5 @@ public class AuthService {
 
         userRepository.save(newUser);
     }
-
-    private boolean isStrongPassword(String password) {
-        if (password.length() < 8) return false;
-        boolean hasUpper = password.matches(".*[A-Z].*");
-        boolean hasLower = password.matches(".*[a-z].*");
-        boolean hasNumber = password.matches(".*\\d.*");
-        return hasUpper && hasLower && hasNumber;
-    }
-
 
 }
