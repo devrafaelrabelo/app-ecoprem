@@ -2,6 +2,7 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
+import com.ecoprem.auth.exception.RefreshTokenExpiredException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token expired. Please login again.");
+            throw new RefreshTokenExpiredException("Refresh token expired. Please login again.");
         }
         return token;
     }
