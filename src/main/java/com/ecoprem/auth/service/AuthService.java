@@ -37,8 +37,10 @@ public class AuthService {
     private final Map<String, Integer> loginAttemptsPerIp = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS_PER_MINUTE = 10;
 
+    private final RefreshTokenService refreshTokenService;
+
     // Login (refatorado)
-    public LoginResponse login(LoginRequest request, HttpServletRequest servletRequest) {
+    public LoginWithRefreshResponse login(LoginRequest request, HttpServletRequest servletRequest) {
 
         // ✅ Validar email logo no começo
         if (!isValidEmail(request.getEmail())) {
@@ -155,12 +157,16 @@ public class AuthService {
 
         activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
-        return new LoginResponse(
+
+        // 🔄 Gera Refresh Token também
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return new LoginWithRefreshResponse(
                 token,
+                refreshToken.getToken(),
                 user.getUsername(),
                 user.getFullName(),
-                false,
-                null
+                false
         );
     }
 
