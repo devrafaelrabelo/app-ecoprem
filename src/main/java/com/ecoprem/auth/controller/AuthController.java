@@ -1,16 +1,12 @@
 package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.*;
-import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
-import com.ecoprem.auth.exception.InvalidRequestException;
-import com.ecoprem.auth.exception.InvalidRoleAssignmentException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
 import com.ecoprem.auth.service.RefreshTokenService;
 import com.ecoprem.auth.service.RevokedTokenService;
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
