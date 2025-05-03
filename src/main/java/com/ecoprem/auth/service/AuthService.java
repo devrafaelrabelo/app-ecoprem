@@ -6,6 +6,7 @@ import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
+import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,13 +40,11 @@ public class AuthService {
     private final MailService mailService;
     private final RefreshTokenService refreshTokenService;
 
-    private final Map<String, Integer> loginAttemptsPerIp = new ConcurrentHashMap<>();
+    private final Cache<String, Integer> loginAttemptsPerIp;
+    private final Cache<String, Integer> loginAttemptsPerEmail;
+    private final Cache<String, Integer> refreshAttemptsPerIp;
     private static final int MAX_ATTEMPTS_PER_MINUTE = 10;
-
-    private final Map<String, Integer> refreshAttemptsPerIp = new ConcurrentHashMap<>();
-    private static final int MAX_REFRESH_ATTEMPTS_PER_MINUTE = 20;
-
-    private final Map<String, Integer> loginAttemptsPerEmail = new ConcurrentHashMap<>();
+    private static final int MAX_REFRESH_ATTEMPTS_PER_MINUTE = 10;
     private static final int MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE = 10;
 
     private RefreshTokenRepository refreshTokenRepository;
@@ -66,14 +65,16 @@ public class AuthService {
             Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
             // Controle de tentativas por IP
-            loginAttemptsPerIp.merge(ipAddress, 1, Integer::sum);
-            if (loginAttemptsPerIp.get(ipAddress) > MAX_ATTEMPTS_PER_MINUTE) {
+            int ipAttempts = loginAttemptsPerIp.get(ipAddress, k -> 0) + 1;
+            loginAttemptsPerIp.put(ipAddress, ipAttempts);
+            if (ipAttempts > MAX_ATTEMPTS_PER_MINUTE) {
                 throw new RateLimitExceededException("Too many login attempts. Please try again later.");
             }
 
             // ✅ Rate limit por email (adicional ao IP)
-            loginAttemptsPerEmail.merge(request.getEmail(), 1, Integer::sum);
-            if (loginAttemptsPerEmail.get(request.getEmail()) > MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE) {
+            int emailAttempts = loginAttemptsPerEmail.get(request.getEmail(), k -> 0) + 1;
+            loginAttemptsPerEmail.put(request.getEmail(), emailAttempts);
+            if (emailAttempts > MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE) {
                 throw new RateLimitExceededException("Too many login attempts for this account. Please try again later.");
             }
 
@@ -173,12 +174,10 @@ public class AuthService {
 
             success = true;
             failureReason = null;
+
             // ✅ Login sucesso ➔ resetar tentativas
             user.setLoginAttempts(0);
             userRepository.save(user);
-
-            // 🔄 Reseta contador por email após sucesso
-            loginAttemptsPerEmail.remove(request.getEmail());
 
             return new LoginWithRefreshResponse(
                     token,
@@ -253,8 +252,9 @@ public class AuthService {
 
         String ipAddress = metadataExtractor.getClientIp(servletRequest); // ou injete isso de alguma forma
 
-        refreshAttemptsPerIp.merge(ipAddress, 1, Integer::sum);
-        if (refreshAttemptsPerIp.get(ipAddress) > MAX_REFRESH_ATTEMPTS_PER_MINUTE) {
+        int refreshAttempts = refreshAttemptsPerIp.get(ipAddress, k -> 0) + 1;
+        refreshAttemptsPerIp.put(ipAddress, refreshAttempts);
+        if (refreshAttempts > MAX_REFRESH_ATTEMPTS_PER_MINUTE) {
             throw new RateLimitExceededException("Too many refresh attempts. Please try again later.");
         }
 
