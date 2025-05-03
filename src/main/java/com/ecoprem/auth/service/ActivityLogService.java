@@ -32,4 +32,16 @@ public class ActivityLogService {
 
         activityLogRepository.save(log);
     }
+
+    public void logAdminAction(User adminUser, String action, User targetUser) {
+        ActivityLog log = new ActivityLog();
+        log.setId(UUID.randomUUID());
+        log.setUser(adminUser);  // quem executou a ação
+        log.setActivity(action);   // descrição livre da ação, ex: "Created user: X"
+        log.setTargetUser(targetUser);  // quem foi afetado (opcional)
+        log.setActivityDate(LocalDateTime.now());
+
+        // (opcional) você pode adicionar IP/metadata também
+        activityLogRepository.save(log);
+    }
 }

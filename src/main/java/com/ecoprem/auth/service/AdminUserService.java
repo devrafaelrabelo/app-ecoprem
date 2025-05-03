@@ -25,8 +25,9 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ActivityLogService activityLogService;
 
-    public void createUserByAdmin(RegisterRequest request) {
+    public void createUserByAdmin(RegisterRequest request,User adminUser) {
 
         if (!isValidEmail(request.getEmail())) {
             throw new IllegalArgumentException("Invalid email format.");
@@ -64,5 +65,11 @@ public class AdminUserService {
         newUser.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(newUser);
+
+        activityLogService.logAdminAction(
+                adminUser,  // o admin que está criando
+                "Created new user: " + newUser.getUsername() + " (" + newUser.getEmail() + ")",
+                newUser     // o usuário criado
+        );
     }
 }

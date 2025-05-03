@@ -45,11 +45,6 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register() {
-        return ResponseEntity.status(403).body("Registration is not allowed.");
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal User user,
                                     HttpServletRequest request) {

@@ -27,5 +27,9 @@ public class ActivityLog {
     private String ipAddress;
 
     private String location;
+
+    @ManyToOne
+    @JoinColumn(name = "target_user_id")
+    private User targetUser;
 }
 

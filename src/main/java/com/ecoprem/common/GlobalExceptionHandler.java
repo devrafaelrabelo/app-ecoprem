@@ -228,18 +228,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        logger.warn("ACCESS DENIED: {} {} from IP {}", request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
+    @ExceptionHandler(CustomAccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(CustomAccessDeniedException ex, HttpServletRequest request) {
         ApiError error = new ApiError(
                 403,
                 "AccessDenied",
-                "You are not authorized to access this resource.",
+                ex.getMessage(),  // usa a mensagem personalizada da exception
                 LocalDateTime.now(),
                 null
         );
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
-
-
 }
