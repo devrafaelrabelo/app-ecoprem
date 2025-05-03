@@ -10,6 +10,7 @@ import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
 import com.ecoprem.auth.service.RefreshTokenService;
 import com.ecoprem.auth.service.RevokedTokenService;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,15 +35,6 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
         LoginWithRefreshResponse response = authService.login(request, servletRequest);
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-        if (!AuthService.ALLOWED_REGISTRATION_ROLES.contains(request.getRole().toUpperCase())) {
-            throw new InvalidRoleAssignmentException("Registration is not allowed for this role.");
-        }
-        authService.register(request);
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")
