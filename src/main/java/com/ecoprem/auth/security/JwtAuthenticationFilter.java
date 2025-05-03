@@ -2,6 +2,7 @@ package com.ecoprem.auth.security;
 
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.auth.service.RevokedTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private RevokedTokenService revokedTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -45,6 +47,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = header.substring(7); // Remove "Bearer "
 
         if (jwtTokenProvider.validateToken(token)) {
+
+            // ✅ Verificar blacklist
+            if (revokedTokenService.isTokenRevoked(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token has been revoked.\"}");
+                return;
+            }
+
             UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
             Optional<User> userOpt = userRepository.findById(userId);
 
