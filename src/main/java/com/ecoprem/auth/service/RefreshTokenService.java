@@ -16,18 +16,31 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public RefreshToken createRefreshToken(User user) {
+    /**
+     * Cria um novo refresh token e invalida o(s) anterior(es) para o usuário.
+     *
+     * @param user       Usuário dono do token
+     * @param daysValid  Quantidade de dias que o token será válido (ex: 30 para remember-me)
+     * @return           O refresh token criado
+     */
+    public RefreshToken createRefreshToken(User user, int daysValid) {
+        // 🔄 Remove tokens antigos para este usuário (refresh rotativo)
         refreshTokenRepository.deleteByUserId(user.getId());
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setId(UUID.randomUUID());
         refreshToken.setUser(user);
         refreshToken.setToken(UUID.randomUUID().toString());
-        refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
+        refreshToken.setExpiresAt(LocalDateTime.now().plusDays(daysValid));  // ✅ usando o parâmetro corretamente
+        refreshToken.setCreatedAt(LocalDateTime.now());
 
         return refreshTokenRepository.save(refreshToken);
     }
 
+    /**
+     * Verifica se o token ainda está válido (não expirou).
+     * Se estiver expirado, já remove e lança exception.
+     */
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);

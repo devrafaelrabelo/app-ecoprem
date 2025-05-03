@@ -172,7 +172,8 @@ public class AuthService {
 
             activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+            int daysValid = request.isRememberMe() ? 30 : 1;
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, daysValid);
 
             success = true;
             failureReason = null;
