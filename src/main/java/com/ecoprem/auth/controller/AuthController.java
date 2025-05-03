@@ -37,26 +37,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.getRefreshToken())
-                .orElseThrow(() -> new InvalidRequestException("Invalid refresh token."));
-
-        refreshTokenService.verifyExpiration(refreshToken);
-
-        User user = refreshToken.getUser();
-
-        String newAccessToken = jwtTokenProvider.generateToken(
-                user.getId(),
-                user.getEmail(),
-                user.getRole().getName()
-        );
-
-        return ResponseEntity.ok(new LoginWithRefreshResponse(
-                newAccessToken,
-                request.getRefreshToken(),  // reuse same refresh token
-                user.getUsername(),
-                user.getFullName(),
-                user.isTwoFactorEnabled()
-        ));
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request, HttpServletRequest servletRequest) {
+        LoginWithRefreshResponse response = authService.refreshToken(request, servletRequest);
+        return ResponseEntity.ok(response);
     }
 }

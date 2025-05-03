@@ -20,6 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
 import static com.ecoprem.auth.util.ValidationUtil.isValidEmail;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -38,6 +41,14 @@ public class AuthService {
 
     private final Map<String, Integer> loginAttemptsPerIp = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS_PER_MINUTE = 10;
+
+    private final Map<String, Integer> refreshAttemptsPerIp = new ConcurrentHashMap<>();
+    private static final int MAX_REFRESH_ATTEMPTS_PER_MINUTE = 20;
+
+    private final Map<String, Integer> loginAttemptsPerEmail = new ConcurrentHashMap<>();
+    private static final int MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE = 10;
+
+    private RefreshTokenRepository refreshTokenRepository;
 
     public LoginWithRefreshResponse login(LoginRequest request, HttpServletRequest servletRequest) {
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
@@ -58,6 +69,12 @@ public class AuthService {
             loginAttemptsPerIp.merge(ipAddress, 1, Integer::sum);
             if (loginAttemptsPerIp.get(ipAddress) > MAX_ATTEMPTS_PER_MINUTE) {
                 throw new RateLimitExceededException("Too many login attempts. Please try again later.");
+            }
+
+            // ✅ Rate limit por email (adicional ao IP)
+            loginAttemptsPerEmail.merge(request.getEmail(), 1, Integer::sum);
+            if (loginAttemptsPerEmail.get(request.getEmail()) > MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE) {
+                throw new RateLimitExceededException("Too many login attempts for this account. Please try again later.");
             }
 
             if (userOpt.isEmpty()) {
@@ -156,6 +173,12 @@ public class AuthService {
 
             success = true;
             failureReason = null;
+            // ✅ Login sucesso ➔ resetar tentativas
+            user.setLoginAttempts(0);
+            userRepository.save(user);
+
+            // 🔄 Reseta contador por email após sucesso
+            loginAttemptsPerEmail.remove(request.getEmail());
 
             return new LoginWithRefreshResponse(
                     token,
@@ -224,5 +247,58 @@ public class AuthService {
         newUser.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(newUser);
+    }
+
+    public LoginWithRefreshResponse refreshToken(RefreshTokenRequest request, HttpServletRequest servletRequest) {
+
+        String ipAddress = metadataExtractor.getClientIp(servletRequest); // ou injete isso de alguma forma
+
+        refreshAttemptsPerIp.merge(ipAddress, 1, Integer::sum);
+        if (refreshAttemptsPerIp.get(ipAddress) > MAX_REFRESH_ATTEMPTS_PER_MINUTE) {
+            throw new RateLimitExceededException("Too many refresh attempts. Please try again later.");
+        }
+
+        RefreshToken token = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new RefreshTokenExpiredException("Invalid refresh token. Please login again."));
+
+        // ✅ Verifica expiração
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(token);
+            throw new RefreshTokenExpiredException("Refresh token expired. Please login again.");
+        }
+
+        User user = token.getUser();
+
+        // 🔄 Refresh rotativo: invalida o token antigo
+        refreshTokenRepository.deleteByUserId(user.getId()); // Limpa todos anteriores desse user
+
+        // ✅ Gera novo refresh token
+        RefreshToken newRefresh = new RefreshToken();
+        newRefresh.setId(UUID.randomUUID());
+        newRefresh.setToken(UUID.randomUUID().toString());
+        newRefresh.setUser(user);
+        newRefresh.setCreatedAt(LocalDateTime.now());
+        newRefresh.setExpiresAt(LocalDateTime.now().plusDays(30)); // Exemplo de validade
+
+        refreshTokenRepository.save(newRefresh);
+
+        log.info("Refresh token used for user {}: new refresh token issued. New expires at: {}", user.getEmail(), newRefresh.getExpiresAt());
+
+        // ✅ Gera novo access token
+        String accessToken = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getName()
+        );
+
+        activityLogService.logActivity(user, "Refreshed token successfully", servletRequest);
+
+        return new LoginWithRefreshResponse(
+                accessToken,
+                newRefresh.getToken(),
+                user.getUsername(),
+                user.getFullName(),
+                user.isTwoFactorEnabled()
+        );
     }
 }
