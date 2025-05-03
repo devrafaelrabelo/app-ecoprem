@@ -4,6 +4,7 @@ import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.exception.InvalidRequestException;
+import com.ecoprem.auth.exception.InvalidRoleAssignmentException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
@@ -37,14 +38,16 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
+        if (!AuthService.ALLOWED_REGISTRATION_ROLES.contains(request.getRole().toUpperCase())) {
+            throw new InvalidRoleAssignmentException("Registration is not allowed for this role.");
+        }
         authService.register(request);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request, HttpServletRequest servletRequest) {
-        LoginWithRefreshResponse response = authService.refreshToken(request, servletRequest);
-        return ResponseEntity.ok(response);
+    @PostMapping("/register")
+    public ResponseEntity<?> register() {
+        return ResponseEntity.status(403).body("Registration is not allowed.");
     }
 
     @PostMapping("/logout")

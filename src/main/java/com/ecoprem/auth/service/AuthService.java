@@ -13,10 +13,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
 import static com.ecoprem.auth.util.ValidationUtil.isValidEmail;
@@ -39,6 +39,8 @@ public class AuthService {
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final MailService mailService;
     private final RefreshTokenService refreshTokenService;
+    public static final Set<String> ALLOWED_REGISTRATION_ROLES = Set.of("CLIENT", "BASIC_USER");
+
 
     private final Cache<String, Integer> loginAttemptsPerIp;
     private final Cache<String, Integer> loginAttemptsPerEmail;
@@ -211,6 +213,7 @@ public class AuthService {
     }
 
     public void register(RegisterRequest request) {
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("The email is already in use.");
         }
@@ -225,8 +228,8 @@ public class AuthService {
         Role role = roleRepository.findByName(request.getRole())
                 .orElseThrow(() -> new RoleNotFoundException("Role not found: " + request.getRole()));
 
-        if ("ADMIN".equalsIgnoreCase(request.getRole())) {
-            throw new InvalidRoleAssignmentException("You cannot assign this role.");
+        if (!ALLOWED_REGISTRATION_ROLES.contains(request.getRole().toUpperCase())) {
+            throw new InvalidRoleAssignmentException("You are not allowed to register this type of account.");
         }
 
         User newUser = new User();

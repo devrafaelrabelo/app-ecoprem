@@ -1,6 +1,7 @@
 package com.ecoprem.common;
 
 import com.ecoprem.auth.exception.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -225,6 +226,19 @@ public class GlobalExceptionHandler {
                 null
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        logger.warn("ACCESS DENIED: {} {} from IP {}", request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
+        ApiError error = new ApiError(
+                403,
+                "AccessDenied",
+                "You are not authorized to access this resource.",
+                LocalDateTime.now(),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
 
