@@ -4,6 +4,7 @@ import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.exception.RefreshTokenExpiredException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +24,11 @@ public class RefreshTokenService {
      * @param daysValid  Quantidade de dias que o token será válido (ex: 30 para remember-me)
      * @return           O refresh token criado
      */
+    @Transactional
     public RefreshToken createRefreshToken(User user, int daysValid) {
         // 🔄 Remove tokens antigos para este usuário (refresh rotativo)
         refreshTokenRepository.deleteByUserId(user.getId());
+        refreshTokenRepository.flush(); // Adicione esta linha!
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setId(UUID.randomUUID());

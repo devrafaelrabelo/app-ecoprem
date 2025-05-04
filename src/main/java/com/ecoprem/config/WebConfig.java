@@ -1,28 +1,27 @@
 package com.ecoprem.config;
 
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @RequiredArgsConstructor
-public class WebConfig {
+public class WebConfig implements WebMvcConfigurer {
 
     private final CorsProperties corsProperties;
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins(corsProperties.getAllowedOrigins())
-                        .allowedMethods(corsProperties.getAllowedMethods())
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
-            }
-        };
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        String[] origins = corsProperties.getAllowedOrigins() != null ? corsProperties.getAllowedOrigins() : new String[]{"http://localhost:3000"};
+
+        String[] methods = corsProperties.getAllowedMethods() != null ? corsProperties.getAllowedMethods() : new String[]{"GET", "POST", "PUT", "DELETE"};
+
+        registry.addMapping("/**")
+                .allowedOriginPatterns(origins)  // 👉 trocou para allowedOriginPatterns
+                .allowedMethods(methods)
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }
