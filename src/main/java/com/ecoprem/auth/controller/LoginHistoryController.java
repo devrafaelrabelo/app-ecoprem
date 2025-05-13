@@ -25,7 +25,7 @@ public class LoginHistoryController {
         List<LoginHistory> histories = loginHistoryRepository.findAll()
                 .stream()
                 .filter(h -> h.getUser() != null && h.getUser().getId().equals(user.getId()))
-                .collect(Collectors.toList());
+                .toList();
 
         return histories.stream().map(h -> {
             LoginHistoryResponse dto = new LoginHistoryResponse();

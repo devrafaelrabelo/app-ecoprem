@@ -5,12 +5,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,224 +16,135 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Trata erros de validação de campos (@Valid)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, Object> errors = new HashMap<>();
-        errors.put("status", 400);
-        errors.put("message", "Validation failed");
-
-        errors.put("errors", ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(fieldError -> {
-                    Map<String, String> error = new HashMap<>();
-                    error.put("field", fieldError.getField());
-                    error.put("message", fieldError.getDefaultMessage());
-                    return error;
-                })
-                .collect(Collectors.toList())
+    private ResponseEntity<ApiError> buildError(HttpStatus status, ErrorType errorType, String detail, String instance, Map<String, Object> details) {
+        return new ResponseEntity<>(
+                new ApiError(
+                        errorType.getUri(),
+                        errorType.getTitle(),
+                        status.value(),
+                        detail,
+                        instance,
+                        LocalDateTime.now(),
+                        details
+                ),
+                status
         );
-
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    // Trata request body inválido ou ausente (ex: JSON faltando)
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("status", 400);
-        error.put("message", "Invalid or missing request body");
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        Map<String, Object> validationErrors = new HashMap<>();
+        validationErrors.put("fields", ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> Map.of(
+                        "field", fieldError.getField(),
+                        "message", fieldError.getDefaultMessage()
+                )).collect(Collectors.toList()));
 
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.VALIDATION,
+                "One or more fields are invalid.",
+                request.getRequestURI(),
+                validationErrors
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.INVALID_BODY,
+                "Malformed or missing JSON payload.",
+                request.getRequestURI(),
+                null
+        );
     }
 
     @ExceptionHandler(AccountLockedException.class)
-    public ResponseEntity<?> handleAccountLocked(AccountLockedException ex) {
-        ApiError error = new ApiError(
-                403,
-                "AccountLocked",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null  // Podemos adicionar detalhes como lockTime se quiser
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleAccountLocked(AccountLockedException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.ACCOUNT_LOCKED, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<?> handleInvalidCredentials(InvalidCredentialsException ex) {
-        ApiError error = new ApiError(
-                401,
-                "InvalidCredentials",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, ErrorType.INVALID_CREDENTIALS, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<?> handleUserNotFound(UserNotFoundException ex) {
-        ApiError error = new ApiError(
-                404,
-                "UserNotFound",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ApiError> handleUserNotFound(UserNotFoundException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, ErrorType.USER_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(TwoFactorRequiredException.class)
-    public ResponseEntity<?> handleTwoFactorRequired(TwoFactorRequiredException ex) {
-        Map<String, Object> details = new HashMap<>();
-        details.put("tempToken", ex.getTempToken());
-
-        ApiError error = new ApiError(
-                403,
-                "TwoFactorRequired",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                details
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleTwoFactorRequired(TwoFactorRequiredException ex, HttpServletRequest request) {
+        Map<String, Object> details = Map.of("tempToken", ex.getTempToken());
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.TWO_FACTOR_REQUIRED, ex.getMessage(), request.getRequestURI(), details);
     }
 
     @ExceptionHandler(AccountSuspendedException.class)
-    public ResponseEntity<?> handleAccountSuspended(AccountSuspendedException ex) {
-        ApiError error = new ApiError(
-                403,
-                "AccountSuspended",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleAccountSuspended(AccountSuspendedException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.ACCOUNT_SUSPENDED, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<?> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
-        ApiError error = new ApiError(
-                409,
-                "EmailAlreadyExists",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    public ResponseEntity<ApiError> handleEmailAlreadyExists(EmailAlreadyExistsException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, ErrorType.EMAIL_ALREADY_EXISTS, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<?> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
-        ApiError error = new ApiError(
-                409,
-                "UsernameAlreadyExists",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    public ResponseEntity<ApiError> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, ErrorType.USERNAME_ALREADY_EXISTS, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<?> handleRoleNotFound(RoleNotFoundException ex) {
-        ApiError error = new ApiError(
-                404,
-                "RoleNotFound",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ApiError> handleRoleNotFound(RoleNotFoundException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, ErrorType.ROLE_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(PasswordTooWeakException.class)
-    public ResponseEntity<?> handlePasswordTooWeak(PasswordTooWeakException ex) {
-        ApiError error = new ApiError(
-                400,
-                "PasswordTooWeak",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ApiError> handlePasswordTooWeak(PasswordTooWeakException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.WEAK_PASSWORD, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(InvalidRoleAssignmentException.class)
-    public ResponseEntity<?> handleInvalidRoleAssignment(InvalidRoleAssignmentException ex) {
-        ApiError error = new ApiError(
-                403,
-                "InvalidRoleAssignment",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleInvalidRoleAssignment(InvalidRoleAssignmentException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.INVALID_ROLE_ASSIGNMENT, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(AccountNotActiveException.class)
-    public ResponseEntity<?> handleAccountNotActive(AccountNotActiveException ex) {
-        ApiError error = new ApiError(
-                403,
-                "AccountNotActive",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleAccountNotActive(AccountNotActiveException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.ACCOUNT_NOT_ACTIVE, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(RateLimitExceededException.class)
-    public ResponseEntity<?> handleRateLimitExceeded(RateLimitExceededException ex) {
-        ApiError error = new ApiError(
-                429,
-                "RateLimitExceeded",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    public ResponseEntity<ApiError> handleRateLimitExceeded(RateLimitExceededException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.TOO_MANY_REQUESTS, ErrorType.RATE_LIMIT_EXCEEDED, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(Invalid2FATokenException.class)
-    public ResponseEntity<?> handleInvalid2FAToken(Invalid2FATokenException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ApiError> handleInvalid2FAToken(Invalid2FATokenException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_2FA_TOKEN, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(Expired2FATokenException.class)
-    public ResponseEntity<?> handleExpired2FAToken(Expired2FATokenException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ApiError> handleExpired2FAToken(Expired2FATokenException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.EXPIRED_2FA_TOKEN, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(Invalid2FACodeException.class)
-    public ResponseEntity<?> handleInvalid2FACode(Invalid2FACodeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<ApiError> handleInvalid2FACode(Invalid2FACodeException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_2FA_CODE, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(RefreshTokenExpiredException.class)
-    public ResponseEntity<?> handleRefreshTokenExpired(RefreshTokenExpiredException ex) {
-        ApiError error = new ApiError(
-                401,
-                "RefreshTokenExpired",
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<ApiError> handleRefreshTokenExpired(RefreshTokenExpiredException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, ErrorType.REFRESH_TOKEN_EXPIRED, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(CustomAccessDeniedException.class)
-    public ResponseEntity<?> handleAccessDenied(CustomAccessDeniedException ex, HttpServletRequest request) {
-        ApiError error = new ApiError(
-                403,
-                "AccessDenied",
-                ex.getMessage(),  // usa a mensagem personalizada da exception
-                LocalDateTime.now(),
-                null
-        );
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiError> handleAccessDenied(CustomAccessDeniedException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.ACCESS_DENIED, ex.getMessage(), request.getRequestURI(), null);
     }
 }
