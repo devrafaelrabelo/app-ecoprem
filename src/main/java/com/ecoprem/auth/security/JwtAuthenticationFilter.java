@@ -3,9 +3,9 @@ package com.ecoprem.auth.security;
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.repository.UserRepository;
 import com.ecoprem.auth.service.RevokedTokenService;
+import com.ecoprem.auth.util.JwtCookieUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,27 +40,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = jwtCookieUtil.extractTokenFromCookie(request);
-        if (token == null || !jwtTokenProvider.validateToken(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            if (revokedTokenService.isTokenRevoked(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{'error': 'Token has been revoked.'}");
+                return;
+            }
 
-        if (revokedTokenService.isTokenRevoked(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("{\"error\": \"Token has been revoked.\"}");
-            return;
-        }
+            UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
+            Optional<User> userOpt = userRepository.findById(userId);
 
-        UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
-        Optional<User> userOpt = userRepository.findById(userId);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    user, null, null
-            );
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        user, null, null);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
