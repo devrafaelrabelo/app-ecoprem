@@ -5,6 +5,7 @@ import com.ecoprem.auth.repository.UserRepository;
 import com.ecoprem.auth.service.RevokedTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,9 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtCookieUtil jwtCookieUtil;
     private final UserRepository userRepository;
-    private RevokedTokenService revokedTokenService;
+    private final RevokedTokenService revokedTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,41 +35,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
         if (path.startsWith("/api/auth/")) {
-            // Rota pública ➔ ignora o filtro JWT
             filterChain.doFilter(request, response);
             return;
         }
 
-        String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
+        String token = jwtCookieUtil.extractTokenFromCookie(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7); // Remove "Bearer "
+        if (revokedTokenService.isTokenRevoked(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Token has been revoked.\"}");
+            return;
+        }
 
-        if (jwtTokenProvider.validateToken(token)) {
+        UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
+        Optional<User> userOpt = userRepository.findById(userId);
 
-            // ✅ Verificar blacklist
-            if (revokedTokenService.isTokenRevoked(token)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("{\"error\": \"Token has been revoked.\"}");
-                return;
-            }
-
-            UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
-            Optional<User> userOpt = userRepository.findById(userId);
-
-            if (userOpt.isPresent()) {
-                User user = userOpt.get();
-
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        user, null, null
-                );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    user, null, null
+            );
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
