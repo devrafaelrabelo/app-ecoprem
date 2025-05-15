@@ -3,23 +3,29 @@ package com.ecoprem.auth.controller;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.BackupCode;
 import com.ecoprem.auth.entity.Pending2FALogin;
+import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.exception.Expired2FATokenException;
 import com.ecoprem.auth.exception.Invalid2FACodeException;
 import com.ecoprem.auth.exception.Invalid2FATokenException;
 import com.ecoprem.auth.repository.Pending2FALoginRepository;
+import com.ecoprem.auth.repository.RefreshTokenRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.BackupCodeService;
 import com.ecoprem.auth.service.TwoFactorAuthService;
 import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.auth.util.JwtCookieUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth/2fa")
@@ -31,6 +37,8 @@ public class TwoFactorAuthController {
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final BackupCodeService backupCodeService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtCookieUtil jwtCookieUtil;
 
     // Setup: Gera secret + QR code
     @PostMapping("/setup")
@@ -81,22 +89,21 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/validate-login")
-    public ResponseEntity<?> validateLogin2FA(@RequestBody TwoFactorLoginRequest request) {
+    public ResponseEntity<?> validateLogin2FA(@RequestBody TwoFactorLoginRequest request,
+                                              HttpServletResponse response) {
+
         Pending2FALogin pending = pending2FALoginRepository.findByTempToken(request.getTempToken())
                 .orElseThrow(() -> new Invalid2FATokenException("Invalid or expired 2FA token."));
 
-        // ✅ Checa expiração
         if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
-            pending2FALoginRepository.delete(pending);  // cleanup
+            pending2FALoginRepository.delete(pending);
             throw new Expired2FATokenException("The 2FA token has expired. Please login again.");
         }
 
         User user = pending.getUser();
 
-        // ✅ Tenta validar código TOTP
         boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
 
-        // Se falhar no TOTP, tenta backup code
         if (!validCode) {
             boolean validBackup = backupCodeService.validateBackupCode(user, request.getTwoFactorCode());
             if (!validBackup) {
@@ -104,23 +111,37 @@ public class TwoFactorAuthController {
             }
         }
 
-        // 🔥 Gerar token final
-        String token = jwtTokenProvider.generateToken(
+        String accessToken = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().getName()
         );
 
-        // Limpa o tempToken (opcional)
-        pending2FALoginRepository.delete(pending);
+        RefreshToken refreshToken = null;
+
+        if (request.isRememberMe()) {
+            refreshTokenRepository.deleteByUserId(user.getId());
+
+            refreshToken = new RefreshToken();
+            refreshToken.setId(UUID.randomUUID());
+            refreshToken.setToken(UUID.randomUUID().toString());
+            refreshToken.setUser(user);
+            refreshToken.setCreatedAt(LocalDateTime.now());
+            refreshToken.setExpiresAt(LocalDateTime.now().plusDays(30));
+            refreshTokenRepository.save(refreshToken);
+
+            jwtCookieUtil.setRefreshTokenCookie(response, refreshToken.getToken(), Duration.ofDays(30));
+        }
+
+        pending2FALoginRepository.delete(pending); // limpa tempToken
 
         return ResponseEntity.ok(
-                new LoginResponse(
-                        token,
+                new LoginWithRefreshResponse(
+                        accessToken,
+                        refreshToken != null ? refreshToken.getToken() : null,
                         user.getUsername(),
                         user.getFullName(),
-                        true,
-                        null
+                        true
                 )
         );
     }

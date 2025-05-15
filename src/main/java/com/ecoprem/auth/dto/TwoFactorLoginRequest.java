@@ -6,4 +6,5 @@ import lombok.Data;
 public class TwoFactorLoginRequest {
     private String twoFactorCode;
     private String tempToken;
+    private boolean rememberMe = false;
 }

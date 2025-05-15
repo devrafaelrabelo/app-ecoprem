@@ -51,7 +51,7 @@ public class AuthService {
 
     private RefreshTokenRepository refreshTokenRepository;
 
-    public LoginWithRefreshResponse login(LoginRequest request, HttpServletRequest servletRequest) {
+    public LoginResult login(LoginRequest request, HttpServletRequest servletRequest) {
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
         String userAgent = metadataExtractor.getUserAgent(servletRequest);
 
@@ -66,14 +66,12 @@ public class AuthService {
 
             Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
-            // Controle de tentativas por IP
             int ipAttempts = loginAttemptsPerIp.get(ipAddress, k -> 0) + 1;
             loginAttemptsPerIp.put(ipAddress, ipAttempts);
             if (ipAttempts > MAX_ATTEMPTS_PER_MINUTE) {
                 throw new RateLimitExceededException("Too many login attempts. Please try again later.");
             }
 
-            // ✅ Rate limit por email (adicional ao IP)
             int emailAttempts = loginAttemptsPerEmail.get(request.getEmail(), k -> 0) + 1;
             loginAttemptsPerEmail.put(request.getEmail(), emailAttempts);
             if (emailAttempts > MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE) {
@@ -105,7 +103,6 @@ public class AuthService {
             if (user.isAccountLocked()) {
                 if (user.getAccountLockedAt() != null &&
                         user.getAccountLockedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
-                    // Desbloqueia após tempo expirar
                     user.setAccountLocked(false);
                     user.setLoginAttempts(0);
                     user.setAccountLockedAt(null);
@@ -139,11 +136,9 @@ public class AuthService {
                 throw new InvalidCredentialsException("The email or password you entered is incorrect.");
             }
 
-            // Login OK: resetar tentativas
             user.setLoginAttempts(0);
             userRepository.save(user);
 
-            // 2FA ativado?
             if (user.isTwoFactorEnabled()) {
                 Pending2FALogin pending = new Pending2FALogin();
                 pending.setId(UUID.randomUUID());
@@ -153,14 +148,12 @@ public class AuthService {
                 pending.setExpiresAt(LocalDateTime.now().plusMinutes(10));
                 pending2FALoginRepository.save(pending);
 
-                // Não vamos gravar log para 2FA requirement, pois não é falha
                 throw new TwoFactorRequiredException(
                         "Two-factor authentication is required.",
                         pending.getTempToken()
                 );
             }
 
-            // Geração de token e sessão
             String token = jwtTokenProvider.generateToken(
                     user.getId(),
                     user.getEmail(),
@@ -172,26 +165,18 @@ public class AuthService {
 
             activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
-            int daysValid = request.isRememberMe() ? 30 : 1;
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, daysValid);
-
-            success = true;
-            failureReason = null;
-
-            // ✅ Login sucesso ➔ resetar tentativas
-            user.setLoginAttempts(0);
-            userRepository.save(user);
-
-            return new LoginWithRefreshResponse(
-                    token,
-                    refreshToken.getToken(),
-                    user.getUsername(),
-                    user.getFullName(),
-                    false
+            return new LoginResult(
+                    new LoginWithRefreshResponse(
+                            token,
+                            null, // refresh token será gerado no controller
+                            user.getUsername(),
+                            user.getFullName(),
+                            user.isTwoFactorEnabled()
+                    ),
+                    user
             );
 
         } finally {
-            // Só grava se tivermos um usuário real
             if (user != null) {
                 recordLoginAttempt(user, ipAddress, userAgent, success, failureReason);
             }
@@ -199,19 +184,19 @@ public class AuthService {
     }
 
     private void recordLoginAttempt(User user, String ipAddress, String userAgent, boolean success, String reason) {
-        LoginHistory history = new LoginHistory();
-        history.setId(UUID.randomUUID());
-        history.setUser(user);
-        history.setLoginDate(LocalDateTime.now());
-        history.setIpAddress(ipAddress);
-        history.setLocation(metadataExtractor.getLocation(ipAddress));
-        history.setDevice(metadataExtractor.detectDevice(userAgent));
-        history.setBrowser(metadataExtractor.detectBrowser(userAgent));
-        history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
-        history.setSuccess(success);
-        history.setFailureReason(reason);
-        loginHistoryRepository.save(history);
-    }
+            LoginHistory history = new LoginHistory();
+            history.setId(UUID.randomUUID());
+            history.setUser(user);
+            history.setLoginDate(LocalDateTime.now());
+            history.setIpAddress(ipAddress);
+            history.setLocation(metadataExtractor.getLocation(ipAddress));
+            history.setDevice(metadataExtractor.detectDevice(userAgent));
+            history.setBrowser(metadataExtractor.detectBrowser(userAgent));
+            history.setOperatingSystem(metadataExtractor.detectOS(userAgent));
+            history.setSuccess(success);
+            history.setFailureReason(reason);
+            loginHistoryRepository.save(history);
+        }
 
     public void register(RegisterRequest request) {
 
