@@ -48,21 +48,16 @@ public class JwtTokenProvider {
     }
 
     public UUID getUserIdFromJWT(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
+        Claims claims = extractClaims(token);
         return UUID.fromString(claims.getSubject());
     }
 
-    public boolean validateToken(String authToken) {
+    public boolean isTokenValid(String token) {
         try {
             Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
-                    .parseSignedClaims(authToken);
+                    .parseSignedClaims(token);
             return true;
         } catch (SignatureException ex) {
             System.out.println("Invalid JWT signature");
@@ -78,12 +73,16 @@ public class JwtTokenProvider {
         return false;
     }
 
-    public LocalDateTime getExpirationDateFromJWT(String token) {
-        Claims claims = Jwts.parser()
+    public Claims extractClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public LocalDateTime getExpirationDateFromJWT(String token) {
+        Claims claims = extractClaims(token);
         return claims.getExpiration().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 }

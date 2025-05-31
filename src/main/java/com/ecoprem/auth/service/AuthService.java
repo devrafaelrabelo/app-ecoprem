@@ -60,49 +60,60 @@ public class AuthService {
         String failureReason = null;
 
         try {
+            // 1. Validação de formato de e-mail
             if (!isValidEmail(request.getEmail())) {
                 throw new InvalidRequestException("Invalid email format.");
             }
 
-            Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-
-            int ipAttempts = loginAttemptsPerIp.get(ipAddress, k -> 0) + 1;
+            // 2. Limite por IP
+            Integer ipAttempts = loginAttemptsPerIp.getIfPresent(ipAddress);
+            ipAttempts = (ipAttempts == null ? 0 : ipAttempts) + 1;
             loginAttemptsPerIp.put(ipAddress, ipAttempts);
             if (ipAttempts > MAX_ATTEMPTS_PER_MINUTE) {
-                throw new RateLimitExceededException("Too many login attempts. Please try again later.");
+                throw new RateLimitExceededException("Too many login attempts from this IP. Please try again later.");
             }
 
-            int emailAttempts = loginAttemptsPerEmail.get(request.getEmail(), k -> 0) + 1;
+            // 3. Limite por e-mail
+            Integer emailAttempts = loginAttemptsPerEmail.getIfPresent(request.getEmail());
+            emailAttempts = (emailAttempts == null ? 0 : emailAttempts) + 1;
             loginAttemptsPerEmail.put(request.getEmail(), emailAttempts);
             if (emailAttempts > MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE) {
                 throw new RateLimitExceededException("Too many login attempts for this account. Please try again later.");
             }
 
+            // 4. Busca usuário
+            Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
             if (userOpt.isEmpty()) {
                 throw new InvalidCredentialsException("The email or password you entered is incorrect.");
             }
-
             user = userOpt.get();
 
+            // 5. E-mail não verificado
             if (!user.isEmailVerified()) {
                 failureReason = "Email not verified";
                 throw new EmailNotVerifiedException("Please verify your email before logging in.");
             }
 
+            // 6. Status da conta
             if (user.getUserStatus() != null) {
                 String status = user.getUserStatus().getStatus().toLowerCase();
-                if ("suspended".equals(status)) {
-                    failureReason = "Account suspended";
-                    throw new AccountSuspendedException("Your account has been suspended. Please contact support.");
-                } else if ("deactivated".equals(status)) {
-                    failureReason = "Account deactivated";
-                    throw new AccountNotActiveException("Your account is deactivated. Please contact support.");
+                switch (status) {
+                    case "suspended" -> {
+                        failureReason = "Account suspended";
+                        throw new AccountSuspendedException("Your account has been suspended. Please contact support.");
+                    }
+                    case "deactivated" -> {
+                        failureReason = "Account deactivated";
+                        throw new AccountNotActiveException("Your account is deactivated. Please contact support.");
+                    }
                 }
             }
 
+            // 7. Conta bloqueada
             if (user.isAccountLocked()) {
                 if (user.getAccountLockedAt() != null &&
                         user.getAccountLockedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
+                    // Libera após tempo
                     user.setAccountLocked(false);
                     user.setLoginAttempts(0);
                     user.setAccountLockedAt(null);
@@ -113,13 +124,14 @@ public class AuthService {
                 }
             }
 
+            // 8. Verifica senha
             success = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
             if (!success) {
                 failureReason = "Invalid password";
                 int attempts = user.getLoginAttempts() + 1;
                 user.setLoginAttempts(attempts);
 
+                // Bloqueia se exceder tentativas
                 if (attempts >= 5 && !user.isAccountLocked()) {
                     user.setAccountLocked(true);
                     user.setAccountLockedAt(LocalDateTime.now());
@@ -136,9 +148,11 @@ public class AuthService {
                 throw new InvalidCredentialsException("The email or password you entered is incorrect.");
             }
 
+            // 9. Login bem-sucedido
             user.setLoginAttempts(0);
             userRepository.save(user);
 
+            // 10. Verifica 2FA
             if (user.isTwoFactorEnabled()) {
                 Pending2FALogin pending = new Pending2FALogin();
                 pending.setId(UUID.randomUUID());
@@ -154,6 +168,7 @@ public class AuthService {
                 );
             }
 
+            // 11. Gera token e cria sessão
             String token = jwtTokenProvider.generateToken(
                     user.getId(),
                     user.getEmail(),
@@ -168,7 +183,7 @@ public class AuthService {
             return new LoginResult(
                     new LoginWithRefreshResponse(
                             token,
-                            null, // refresh token será gerado no controller
+                            null,
                             user.getUsername(),
                             user.getFullName(),
                             user.isTwoFactorEnabled()

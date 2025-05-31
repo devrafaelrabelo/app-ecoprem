@@ -6,23 +6,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
-
 import java.time.Duration;
 
 @Component
 public class JwtCookieUtil {
 
-    public static final String TOKEN_COOKIE_NAME = "__Host-ecoprem_auth_token";
-    public static final String REFRESH_TOKEN_COOKIE_NAME = "__Host-ecoprem_refresh_token";
+    public static final String TOKEN_COOKIE_NAME = "ecoprem_auth_token";
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "ecoprem_refresh_token";
 
-    private static final int ACCESS_TOKEN_EXPIRATION_SECONDS = (int) Duration.ofHours(2).getSeconds();
+    private static final int ACCESS_TOKEN_EXPIRATION_SECONDS = (int) Duration.ofMinutes(2).getSeconds(); //
     private static final int REFRESH_TOKEN_EXPIRATION_SECONDS = (int) Duration.ofDays(30).getSeconds();
+
 
     public void setTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(true)
                 .path("/")
+                .secure(false) // true em produção com HTTPS
                 .sameSite("Strict")
                 .maxAge(ACCESS_TOKEN_EXPIRATION_SECONDS)
                 .build();
@@ -32,8 +32,8 @@ public class JwtCookieUtil {
     public void clearTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(true)
                 .path("/")
+                .secure(false)
                 .sameSite("Strict")
                 .maxAge(0)
                 .build();
@@ -50,12 +50,11 @@ public class JwtCookieUtil {
         return null;
     }
 
-
     public void setRefreshTokenCookie(HttpServletResponse response, String token, Duration duration) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(true)
                 .path("/")
+                .secure(false)
                 .sameSite("Strict")
                 .maxAge(duration)
                 .build();
@@ -65,8 +64,8 @@ public class JwtCookieUtil {
     public void clearRefreshTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(true)
                 .path("/")
+                .secure(false)
                 .sameSite("Strict")
                 .maxAge(0)
                 .build();
@@ -82,5 +81,4 @@ public class JwtCookieUtil {
         }
         return null;
     }
-
 }

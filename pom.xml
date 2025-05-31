@@ -158,19 +158,10 @@
 			<version>1.17.3</version>
 			<scope>test</scope>
 		</dependency>
-
-		<!-- Dependências para Testes		-->
-		<!-- JUnit 5 -->
 		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.7.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.7.1</version>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.17.3</version> <!-- ou a mesma versão do seu testcontainers -->
 			<scope>test</scope>
 		</dependency>
 

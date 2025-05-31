@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = jwtCookieUtil.extractTokenFromCookie(request);
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (token != null && jwtTokenProvider.isTokenValid(token)) {
             if (revokedTokenService.isTokenRevoked(token)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{'error': 'Token has been revoked.'}");

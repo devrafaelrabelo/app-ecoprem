@@ -15,6 +15,8 @@ import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import com.ecoprem.common.ApiError;
 import com.github.benmanes.caffeine.cache.Cache;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,12 +28,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -164,6 +169,40 @@ public class AuthController {
         activityLogService.logActivity(user, "Refreshed token via cookie", request);
 
         return ResponseEntity.ok().build(); // token enviado por cookie
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            String token = jwtCookieUtil.extractTokenFromCookie(request);
+
+            if (token == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("valid", false, "error", "Token não encontrado no cookie"));
+            }
+
+            Claims claims = jwtTokenProvider.extractClaims(token);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("valid", true);
+            result.put("userId", claims.getSubject());
+            result.put("email", claims.get("email"));
+            result.put("role", claims.get("role"));
+            result.put("expiresAt", claims.getExpiration());
+
+            System.out.println("Token Valido: " + claims.getExpiration());
+            return ResponseEntity.ok(result);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // 💡 Limpa cookie se token inválido ou expirado
+
+            System.out.println("Token inválido ou expirado: " + e.getMessage());
+            jwtCookieUtil.clearTokenCookie(response);
+            jwtCookieUtil.clearRefreshTokenCookie(response);
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("valid", false, "error", "Token inválido ou expirado"));
+        }
     }
 
 }

@@ -5,11 +5,13 @@ import com.ecoprem.auth.entity.User;
 import com.ecoprem.auth.repository.ActiveSessionRepository;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -41,7 +43,27 @@ public class ActiveSessionService {
         return activeSessionRepository.findByUserId(user.getId());
     }
 
+    @Transactional
     public void terminateSession(String sessionId) {
         activeSessionRepository.deleteBySessionId(sessionId);
+    }
+
+    @Transactional
+    public void terminateAllSessions(User user) {
+        activeSessionRepository.deleteByUserId(user.getId());
+    }
+
+    @Transactional
+    public boolean terminateSessionIfOwned(String sessionId, User user) {
+        Optional<ActiveSession> sessionOpt = activeSessionRepository.findBySessionId(sessionId);
+
+        if (sessionOpt.isPresent()) {
+            ActiveSession session = sessionOpt.get();
+            if (session.getUser().getId().equals(user.getId())) {
+                activeSessionRepository.delete(session);
+                return true;
+            }
+        }
+        return false;
     }
 }

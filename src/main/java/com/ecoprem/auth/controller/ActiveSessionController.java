@@ -17,6 +17,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ActiveSessionController {
 
+
     private final ActiveSessionService activeSessionService;
 
     @GetMapping
@@ -42,9 +43,20 @@ public class ActiveSessionController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping
+    public ResponseEntity<?> terminateAllSessions(@AuthenticationPrincipal User user) {
+        activeSessionService.terminateAllSessions(user);
+        return ResponseEntity.ok("Todas as suas sessões foram encerradas.");
+    }
+
     @DeleteMapping("/{sessionId}")
-    public ResponseEntity<?> terminateSession(@PathVariable String sessionId) {
-        activeSessionService.terminateSession(sessionId);
-        return ResponseEntity.ok("Session terminated");
+    public ResponseEntity<?> terminateSession(@PathVariable String sessionId,
+                                              @AuthenticationPrincipal User user) {
+        boolean success = activeSessionService.terminateSessionIfOwned(sessionId, user);
+        if (success) {
+            return ResponseEntity.ok("Sessão encerrada com sucesso.");
+        } else {
+            return ResponseEntity.status(403).body("Sessão não pertence a este usuário.");
+        }
     }
 }
