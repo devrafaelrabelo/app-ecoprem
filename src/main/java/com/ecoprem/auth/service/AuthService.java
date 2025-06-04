@@ -1,17 +1,23 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.*;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
+import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import com.github.benmanes.caffeine.cache.Cache;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
@@ -38,7 +44,6 @@ public class AuthService {
     private final ActiveSessionService activeSessionService;
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final MailService mailService;
-    private final RefreshTokenService refreshTokenService;
     public static final Set<String> ALLOWED_REGISTRATION_ROLES = Set.of("CLIENT", "BASIC_USER");
 
 
@@ -49,7 +54,11 @@ public class AuthService {
     private static final int MAX_REFRESH_ATTEMPTS_PER_MINUTE = 10;
     private static final int MAX_ATTEMPTS_PER_EMAIL_PER_MINUTE = 10;
 
-    private RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtCookieUtil jwtCookieUtil;
+
+    @Autowired
+    private AuthProperties authProperties;
 
     public LoginResult login(LoginRequest request, HttpServletRequest servletRequest) {
         String ipAddress = metadataExtractor.getClientIp(servletRequest);
@@ -167,16 +176,18 @@ public class AuthService {
                         pending.getTempToken()
                 );
             }
+            String sessionId = UUID.randomUUID().toString();
+            activeSessionService.createSession(user, sessionId, servletRequest);
 
             // 11. Gera token e cria sessão
             String token = jwtTokenProvider.generateToken(
                     user.getId(),
                     user.getEmail(),
-                    user.getRole().getName()
+                    user.getRole().getName(),
+                    sessionId
             );
 
-            String sessionId = UUID.randomUUID().toString();
-            activeSessionService.createSession(user, sessionId, servletRequest);
+
 
             activityLogService.logActivity(user, "Logged in successfully", servletRequest);
 
@@ -252,9 +263,8 @@ public class AuthService {
         userRepository.save(newUser);
     }
 
-    public LoginWithRefreshResponse refreshToken(RefreshTokenRequest request, HttpServletRequest servletRequest) {
-
-        String ipAddress = metadataExtractor.getClientIp(servletRequest); // ou injete isso de alguma forma
+    public LoginWithRefreshResponse refreshToken(RefreshTokenRequest request, HttpServletRequest servletRequest, HttpServletResponse response) {
+        String ipAddress = metadataExtractor.getClientIp(servletRequest);
 
         int refreshAttempts = refreshAttemptsPerIp.get(ipAddress, k -> 0) + 1;
         refreshAttemptsPerIp.put(ipAddress, refreshAttempts);
@@ -262,10 +272,10 @@ public class AuthService {
             throw new RateLimitExceededException("Too many refresh attempts. Please try again later.");
         }
 
+        // ✅ Valida refresh token
         RefreshToken token = refreshTokenRepository.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new RefreshTokenExpiredException("Invalid refresh token. Please login again."));
 
-        // ✅ Verifica expiração
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
             throw new RefreshTokenExpiredException("Refresh token expired. Please login again.");
@@ -273,8 +283,8 @@ public class AuthService {
 
         User user = token.getUser();
 
-        // 🔄 Refresh rotativo: invalida o token antigo
-        refreshTokenRepository.deleteByUserId(user.getId()); // Limpa todos anteriores desse user
+        // 🔄 Refresh rotativo: remove os tokens anteriores
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         // ✅ Gera novo refresh token
         RefreshToken newRefresh = new RefreshToken();
@@ -282,27 +292,90 @@ public class AuthService {
         newRefresh.setToken(UUID.randomUUID().toString());
         newRefresh.setUser(user);
         newRefresh.setCreatedAt(LocalDateTime.now());
-        newRefresh.setExpiresAt(LocalDateTime.now().plusDays(30)); // Exemplo de validade
-
+        newRefresh.setExpiresAt(LocalDateTime.now().plusDays(30));
         refreshTokenRepository.save(newRefresh);
 
-        log.info("Refresh token used for user {}: new refresh token issued. New expires at: {}", user.getEmail(), newRefresh.getExpiresAt());
+        // ✅ Extrai sessionId do access token (do cookie)
+        String accessToken = jwtCookieUtil.extractTokenFromCookie(servletRequest);
+        String sessionId = null;
 
-        // ✅ Gera novo access token
-        String accessToken = jwtTokenProvider.generateToken(
+        try {
+            Claims claims = jwtTokenProvider.extractClaims(accessToken);
+            sessionId = claims.get("sessionId", String.class);
+        } catch (Exception e) {
+            // ⚠️ Se falhar, cria nova sessão
+            sessionId = UUID.randomUUID().toString();
+            activeSessionService.createSession(user, sessionId, servletRequest);
+        }
+
+        // ✅ Gera novo access token com sessionId
+        String newAccessToken = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().getName()
+                user.getRole().getName(),
+                sessionId
         );
 
-        activityLogService.logActivity(user, "Refreshed token successfully", servletRequest);
+        // 🍪 Atualiza os cookies
+        jwtCookieUtil.setTokenCookie(response, newAccessToken);
+        jwtCookieUtil.setRefreshTokenCookie(response, newRefresh.getToken(), Duration.ofDays(30));
+
+        activityLogService.logActivity(user, "Refreshed token (cookie-based)", servletRequest);
 
         return new LoginWithRefreshResponse(
-                accessToken,
+                newAccessToken,
                 newRefresh.getToken(),
                 user.getUsername(),
                 user.getFullName(),
                 user.isTwoFactorEnabled()
         );
     }
+
+    public LoginWithRefreshResponse completeLogin(User user, boolean rememberMe,
+                                                  HttpServletRequest request,
+                                                  HttpServletResponse response) {
+
+        // 🆔 Cria e registra sessionId
+        String sessionId = UUID.randomUUID().toString();
+        activeSessionService.createSession(user, sessionId, request);
+
+        // 🔐 Gera access token
+        String accessToken = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getName(),
+                sessionId
+        );
+
+        jwtCookieUtil.setTokenCookie(response, accessToken);
+
+        // 🔁 Gerar refresh token com base no rememberMe
+        Duration duration = rememberMe
+                ? Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshLongMin())
+                : Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+
+        refreshTokenRepository.deleteByUserId(user.getId());
+
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setId(UUID.randomUUID());
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setUser(user);
+        refreshToken.setCreatedAt(LocalDateTime.now());
+        refreshToken.setExpiresAt(LocalDateTime.now().plus(duration));
+        refreshTokenRepository.save(refreshToken);
+
+        jwtCookieUtil.setRefreshTokenCookie(response, refreshToken.getToken(), duration);
+
+        // 📋 Log de atividade
+        activityLogService.logActivity(user, "Login realizado com rememberMe=" + rememberMe, request);
+
+        return new LoginWithRefreshResponse(
+                accessToken,
+                refreshToken.getToken(),
+                user.getUsername(),
+                user.getFullName(),
+                user.isTwoFactorEnabled()
+        );
+    }
+
 }

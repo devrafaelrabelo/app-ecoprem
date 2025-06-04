@@ -11,10 +11,13 @@ import com.ecoprem.auth.exception.Invalid2FATokenException;
 import com.ecoprem.auth.repository.Pending2FALoginRepository;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import com.ecoprem.auth.security.JwtTokenProvider;
+import com.ecoprem.auth.service.ActiveSessionService;
+import com.ecoprem.auth.service.AuthService;
 import com.ecoprem.auth.service.BackupCodeService;
 import com.ecoprem.auth.service.TwoFactorAuthService;
 import com.ecoprem.auth.repository.UserRepository;
 import com.ecoprem.auth.util.JwtCookieUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +42,8 @@ public class TwoFactorAuthController {
     private final BackupCodeService backupCodeService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtCookieUtil jwtCookieUtil;
+    private final ActiveSessionService activeSessionService;
+    private final AuthService authService;
 
     // Setup: Gera secret + QR code
     @PostMapping("/setup")
@@ -76,7 +81,7 @@ public class TwoFactorAuthController {
     }
 
     // Desativa 2FA
-    @PostMapping("/2fa/disable")
+    @PostMapping("/disable")
     public ResponseEntity<?> disableTwoFactor(@AuthenticationPrincipal User user) {
         user.setTwoFactorEnabled(false);
         user.setTwoFactorSecret(null);
@@ -90,6 +95,7 @@ public class TwoFactorAuthController {
 
     @PostMapping("/validate-login")
     public ResponseEntity<?> validateLogin2FA(@RequestBody TwoFactorLoginRequest request,
+                                              HttpServletRequest httpRequest,
                                               HttpServletResponse response) {
 
         Pending2FALogin pending = pending2FALoginRepository.findByTempToken(request.getTempToken())
@@ -104,46 +110,15 @@ public class TwoFactorAuthController {
 
         boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
 
-        if (!validCode) {
-            boolean validBackup = backupCodeService.validateBackupCode(user, request.getTwoFactorCode());
-            if (!validBackup) {
-                throw new Invalid2FACodeException("The 2FA code is incorrect.");
-            }
+        if (!validCode && !backupCodeService.validateBackupCode(user, request.getTwoFactorCode())) {
+            throw new Invalid2FACodeException("The 2FA code is incorrect.");
         }
 
-        String accessToken = jwtTokenProvider.generateToken(
-                user.getId(),
-                user.getEmail(),
-                user.getRole().getName()
-        );
+        LoginWithRefreshResponse loginResponse = authService.completeLogin(user, request.isRememberMe(), httpRequest, response);
 
-        RefreshToken refreshToken = null;
+        pending2FALoginRepository.delete(pending);
 
-        if (request.isRememberMe()) {
-            refreshTokenRepository.deleteByUserId(user.getId());
-
-            refreshToken = new RefreshToken();
-            refreshToken.setId(UUID.randomUUID());
-            refreshToken.setToken(UUID.randomUUID().toString());
-            refreshToken.setUser(user);
-            refreshToken.setCreatedAt(LocalDateTime.now());
-            refreshToken.setExpiresAt(LocalDateTime.now().plusDays(30));
-            refreshTokenRepository.save(refreshToken);
-
-            jwtCookieUtil.setRefreshTokenCookie(response, refreshToken.getToken(), Duration.ofDays(30));
-        }
-
-        pending2FALoginRepository.delete(pending); // limpa tempToken
-
-        return ResponseEntity.ok(
-                new LoginWithRefreshResponse(
-                        accessToken,
-                        refreshToken != null ? refreshToken.getToken() : null,
-                        user.getUsername(),
-                        user.getFullName(),
-                        true
-                )
-        );
+        return ResponseEntity.ok(loginResponse);
     }
 
     @GetMapping("/backup-codes")

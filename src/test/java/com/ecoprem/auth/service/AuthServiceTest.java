@@ -285,6 +285,8 @@ class AuthServiceLoginTests extends AuthServiceTestBase {
     @Test
     void testLoginSuccess() {
         String token = "jwt-token-mock";
+        String sessionId = "sessao-mock";
+
         Role role = new Role();
         role.setName("USER");
 
@@ -297,13 +299,15 @@ class AuthServiceLoginTests extends AuthServiceTestBase {
 
         when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("raw-password", "encoded-password")).thenReturn(true);
-        when(jwtTokenProvider.generateToken(any(), eq(testEmail), eq("USER"))).thenReturn(token);
+        when(jwtTokenProvider.generateToken(any(), eq(testEmail), eq("USER"), anyString())).thenReturn(token);
 
         LoginResult result = authService.login(request, servletRequest);
 
         assertNotNull(result);
         assertEquals(token, result.response().getAccessToken());
-        assertEquals(testEmail, result.user().getEmail());
+
+        // ✅ Verifica se sessão foi registrada
+        verify(activeSessionService).createSession(eq(user), anyString(), eq(servletRequest));
     }
 
     @Test

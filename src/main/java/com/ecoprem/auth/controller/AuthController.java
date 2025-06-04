@@ -1,5 +1,6 @@
 package com.ecoprem.auth.controller;
 
+import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.entity.RefreshToken;
 import com.ecoprem.auth.entity.User;
@@ -10,18 +11,11 @@ import com.ecoprem.auth.service.ActivityLogService;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
-import com.ecoprem.auth.service.RefreshTokenService;
 import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
-import com.ecoprem.common.ApiError;
 import com.github.benmanes.caffeine.cache.Cache;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -58,19 +52,32 @@ public class AuthController {
     @Autowired
     private JwtCookieUtil jwtCookieUtil;
 
+    @Autowired
+    private AuthProperties authProperties;
+
+    @GetMapping("/DevTest")
+    public ResponseEntity<Map<String, Object>> getAuthConfig() {
+        Map<String, Object> result = new HashMap<>();
+
+        AuthProperties.Durations durations = authProperties.getCookiesDurations();
+        AuthProperties.CookieProperties props = authProperties.getCookiesProperties();
+        AuthProperties.CookieNames names = authProperties.getCookieNames();
+
+        result.put("accessTokenMin", durations.getAccessTokenMin());
+        result.put("refreshShortMin", durations.getRefreshShortMin());
+        result.put("refreshLongMin", durations.getRefreshLongMin());
+
+        result.put("secure", props.isSecure());
+        result.put("httpOnly", props.isHttpOnly());
+        result.put("sameSite", props.getSameSite());
+
+        result.put("cookieNameAccess", names.getAccess());
+        result.put("cookieNameRefresh", names.getRefresh());
+
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/login")
-    @Operation(summary = "Authenticate user and return JWT + refresh token")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful login"),
-            @ApiResponse(responseCode = "400", description = "Invalid request",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Account locked, suspended or 2FA required",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "429", description = "Rate limit exceeded",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    HttpServletRequest servletRequest,
                                    HttpServletResponse response) {
@@ -78,31 +85,15 @@ public class AuthController {
         log.info("Login received. rememberMe = {}", request.isRememberMe());
 
         LoginResult result = authService.login(request, servletRequest);
-        LoginWithRefreshResponse loginResponse = result.response();
-        User user = result.user();
 
-        jwtCookieUtil.setTokenCookie(response, loginResponse.getAccessToken());
-
-        if (request.isRememberMe()) {
-            refreshTokenRepository.deleteByUserId(user.getId());
-
-            RefreshToken refreshToken = new RefreshToken();
-            refreshToken.setId(UUID.randomUUID());
-            refreshToken.setToken(UUID.randomUUID().toString());
-            refreshToken.setUser(user);
-            refreshToken.setCreatedAt(LocalDateTime.now());
-            refreshToken.setExpiresAt(LocalDateTime.now().plusDays(30));
-            refreshTokenRepository.save(refreshToken);
-            log.info(">> Enviando refreshToken no cookie...");
-            jwtCookieUtil.setRefreshTokenCookie(response, refreshToken.getToken(), Duration.ofDays(30));
-            activityLogService.logActivity(user, "Login realizado com rememberMe=" + request.isRememberMe(), servletRequest);
-        } else {
-            activityLogService.logActivity(user, "Login realizado sem rememberMe", servletRequest);
-        }
-
+        LoginWithRefreshResponse loginResponse = authService.completeLogin(
+                result.user(),
+                request.isRememberMe(),
+                servletRequest,
+                response
+        );
         return ResponseEntity.ok().build();
     }
-
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal User user,
@@ -125,7 +116,6 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
-
         String ipAddress = metadataExtractor.getClientIp(request);
         int refreshAttempts = refreshAttemptsPerIp.get(ipAddress, k -> 0) + 1;
         refreshAttemptsPerIp.put(ipAddress, refreshAttempts);
@@ -149,26 +139,41 @@ public class AuthController {
         User user = token.getUser();
         refreshTokenRepository.deleteByUserId(user.getId());
 
+        String accessToken = jwtCookieUtil.extractTokenFromCookie(request);
+        String sessionId;
+        try {
+            Claims claims = jwtTokenProvider.extractClaims(accessToken);
+            sessionId = claims.get("sessionId", String.class);
+        } catch (Exception e) {
+            sessionId = UUID.randomUUID().toString();
+        }
+
+        Duration existingDuration = Duration.between(token.getCreatedAt(), token.getExpiresAt());
+        Duration duration = existingDuration.toHours() >= 24
+                ? Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshLongMin())
+                : Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+
         RefreshToken newRefresh = new RefreshToken();
         newRefresh.setId(UUID.randomUUID());
         newRefresh.setToken(UUID.randomUUID().toString());
         newRefresh.setUser(user);
         newRefresh.setCreatedAt(LocalDateTime.now());
-        newRefresh.setExpiresAt(LocalDateTime.now().plusDays(30));
+        newRefresh.setExpiresAt(LocalDateTime.now().plus(duration));
         refreshTokenRepository.save(newRefresh);
 
         String newAccessToken = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().getName()
+                user.getRole().getName(),
+                sessionId
         );
 
         jwtCookieUtil.setTokenCookie(response, newAccessToken);
-        jwtCookieUtil.setRefreshTokenCookie(response, newRefresh.getToken(), Duration.ofDays(30));
+        jwtCookieUtil.setRefreshTokenCookie(response, newRefresh.getToken(), duration);
 
         activityLogService.logActivity(user, "Refreshed token via cookie", request);
 
-        return ResponseEntity.ok().build(); // token enviado por cookie
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/validate")
@@ -190,13 +195,9 @@ public class AuthController {
             result.put("role", claims.get("role"));
             result.put("expiresAt", claims.getExpiration());
 
-            System.out.println("Token Valido: " + claims.getExpiration());
             return ResponseEntity.ok(result);
 
         } catch (JwtException | IllegalArgumentException e) {
-            // 💡 Limpa cookie se token inválido ou expirado
-
-            System.out.println("Token inválido ou expirado: " + e.getMessage());
             jwtCookieUtil.clearTokenCookie(response);
             jwtCookieUtil.clearRefreshTokenCookie(response);
 
@@ -204,5 +205,4 @@ public class AuthController {
                     .body(Map.of("valid", false, "error", "Token inválido ou expirado"));
         }
     }
-
 }

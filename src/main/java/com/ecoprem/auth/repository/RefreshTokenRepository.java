@@ -9,11 +9,11 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
+@Transactional
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
     Optional<RefreshToken> findByToken(String token);
 
-    @Transactional
     @Modifying
     void deleteByUserId(UUID userId);
 }
