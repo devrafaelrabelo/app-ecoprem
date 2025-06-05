@@ -24,7 +24,7 @@ public class JwtCookieUtil {
                 .secure(authProperties.getCookiesProperties().isSecure())
                 .path("/")
                 .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(authProperties.getCookiesDurations().getAccessTokenMin())
+                .maxAge(Duration.ofMinutes(authProperties.getCookiesDurations().getAccessTokenMin()))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
