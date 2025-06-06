@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.auth.entity.RefreshToken;
+import com.ecoprem.entity.RefreshToken;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

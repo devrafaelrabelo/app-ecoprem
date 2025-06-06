@@ -1,7 +1,7 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.auth.entity.BackupCode;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.BackupCode;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.repository.BackupCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

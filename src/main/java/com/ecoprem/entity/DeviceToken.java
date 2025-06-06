@@ -1,29 +1,28 @@
-package com.ecoprem.auth.entity;
+package com.ecoprem.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "refresh_token")
+@Table(name = "device_token")
 @Data
-public class RefreshToken {
+public class DeviceToken {
 
     @Id
     private UUID id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "device_name")
+    private String deviceName;
+
+    @Column(nullable = false)
     private String token;
 
-    @Column(nullable = false)
-    private LocalDateTime expiresAt;
-
-    @Column(nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

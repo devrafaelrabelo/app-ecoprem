@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.auth.entity.ActiveSession;
+import com.ecoprem.entity.ActiveSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

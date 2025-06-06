@@ -1,14 +1,14 @@
-package com.ecoprem.auth.entity;
+package com.ecoprem.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "device_token")
 @Data
-public class DeviceToken {
+public class BackupCode {
 
     @Id
     private UUID id;
@@ -17,12 +17,15 @@ public class DeviceToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "device_name")
-    private String deviceName;
+    @Column(nullable = false)
+    private String code;
 
     @Column(nullable = false)
-    private String token;
+    private boolean used = false;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
 }

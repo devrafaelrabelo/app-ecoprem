@@ -1,4 +1,4 @@
-package com.ecoprem.auth.entity;
+package com.ecoprem.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -7,25 +7,23 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "refresh_token")
 @Data
-public class BackupCode {
+public class RefreshToken {
 
     @Id
     private UUID id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
-    private String code;
+    @Column(nullable = false, unique = true)
+    private String token;
 
     @Column(nullable = false)
-    private boolean used = false;
+    private LocalDateTime expiresAt;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "used_at")
-    private LocalDateTime usedAt;
 }

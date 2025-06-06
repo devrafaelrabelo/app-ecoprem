@@ -1,8 +1,7 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
-import com.ecoprem.auth.entity.User;
-import com.ecoprem.auth.exception.*;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
@@ -15,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;

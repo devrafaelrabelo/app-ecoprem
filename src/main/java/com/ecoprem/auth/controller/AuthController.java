@@ -2,13 +2,11 @@ package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

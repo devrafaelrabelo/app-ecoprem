@@ -1,10 +1,9 @@
 package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.*;
-import com.ecoprem.auth.entity.BackupCode;
-import com.ecoprem.auth.entity.Pending2FALogin;
-import com.ecoprem.auth.entity.RefreshToken;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.BackupCode;
+import com.ecoprem.entity.Pending2FALogin;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.exception.Expired2FATokenException;
 import com.ecoprem.auth.exception.Invalid2FACodeException;
 import com.ecoprem.auth.exception.Invalid2FATokenException;
@@ -24,11 +23,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth/2fa")

@@ -1,7 +1,7 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.auth.entity.RevokedToken;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.RevokedToken;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.repository.RevokedTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

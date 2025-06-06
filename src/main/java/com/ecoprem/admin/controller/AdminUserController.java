@@ -1,8 +1,7 @@
 package com.ecoprem.admin.controller;
 
-import com.ecoprem.admin.dto.AdminUserResponseDTO;
 import com.ecoprem.auth.dto.RegisterRequest;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.User;
 import com.ecoprem.admin.service.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(
         name = "Admin - Usuários",

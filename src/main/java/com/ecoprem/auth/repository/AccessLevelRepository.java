@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.auth.entity.AccessLevel;
+import com.ecoprem.entity.AccessLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,7 +1,8 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.auth.entity.ActivityLog;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.auth.dto.ActivityLogResponse;
+import com.ecoprem.entity.ActivityLog;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.repository.ActivityLogRepository;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -44,4 +46,17 @@ public class ActivityLogService {
         // (opcional) você pode adicionar IP/metadata também
         activityLogRepository.save(log);
     }
+
+    public List<ActivityLogResponse> getUserActivityLogs(User user) {
+        return activityLogRepository.findByUserId(user.getId()).stream()
+                .map(log -> ActivityLogResponse.builder()
+                        .id(log.getId())
+                        .activity(log.getActivity())
+                        .activityDate(log.getActivityDate())
+                        .ipAddress(log.getIpAddress())
+                        .location(log.getLocation())
+                        .build()
+                ).toList();
+    }
+
 }

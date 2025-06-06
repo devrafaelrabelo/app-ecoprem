@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.auth.entity.Pending2FALogin;
+import com.ecoprem.entity.Pending2FALogin;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

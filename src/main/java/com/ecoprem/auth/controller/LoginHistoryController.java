@@ -1,8 +1,8 @@
 package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.LoginHistoryResponse;
-import com.ecoprem.auth.entity.LoginHistory;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.LoginHistory;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.repository.LoginHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

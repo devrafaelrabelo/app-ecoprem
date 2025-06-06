@@ -261,18 +261,14 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
 import com.ecoprem.auth.dto.LoginResult;
-import com.ecoprem.auth.entity.Role;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.Role;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.exception.*;
-import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

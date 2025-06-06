@@ -1,8 +1,8 @@
 package com.ecoprem.admin.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
-import com.ecoprem.auth.entity.Role;
-import com.ecoprem.auth.entity.User;
+import com.ecoprem.entity.Role;
+import com.ecoprem.entity.User;
 import com.ecoprem.auth.exception.EmailAlreadyExistsException;
 import com.ecoprem.auth.exception.RoleNotFoundException;
 import com.ecoprem.auth.exception.UsernameAlreadyExistsException;
