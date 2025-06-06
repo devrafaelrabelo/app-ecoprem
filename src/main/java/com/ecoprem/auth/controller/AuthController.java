@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,6 +57,7 @@ public class AuthController {
         result.put("accessTokenMin", durations.getAccessTokenMin());
         result.put("refreshShortMin", durations.getRefreshShortMin());
         result.put("refreshLongMin", durations.getRefreshLongMin());
+        result.put("twofaTokenShortMin", durations.getTwofaShortMin());
 
         result.put("secure", props.isSecure());
         result.put("httpOnly", props.isHttpOnly());
@@ -62,6 +65,8 @@ public class AuthController {
 
         result.put("cookieNameAccess", names.getAccess());
         result.put("cookieNameRefresh", names.getRefresh());
+        result.put("cookieName2FA", names.getTwofa());
+
 
         return ResponseEntity.ok(result);
     }
@@ -85,21 +90,25 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    HttpServletRequest servletRequest,
                                    HttpServletResponse response) {
-        log.info("Login received. rememberMe = {}", request.isRememberMe());
+        try {
+            LoginResult result = authService.login(request, servletRequest);
+            LoginWithRefreshResponse loginResponse = authService.completeLogin(
+                    result.user(),
+                    request.isRememberMe(),
+                    servletRequest,
+                    response
+            );
+            return ResponseEntity.ok(loginResponse);
 
-        LoginResult result = authService.login(request, servletRequest);
+        } catch (TwoFactorRequiredException e) {
+        Duration duration = Duration.ofMinutes(authProperties.getCookiesDurations().getTwofaShortMin());
+        jwtCookieUtil.setTempTokenCookie(response, e.getTempToken(), duration);
 
-        LoginWithRefreshResponse loginResponse = authService.completeLogin(
-                result.user(),
-                request.isRememberMe(),
-                servletRequest,
-                response
-        );
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Login successful. Access token issued."
+        return ResponseEntity.status(206).body(Map.of(
+                "2fa_required", true,
+                "message", e.getMessage()
         ));
+    }
     }
 
     @Operation(

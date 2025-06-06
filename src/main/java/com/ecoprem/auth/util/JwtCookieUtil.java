@@ -81,4 +81,36 @@ public class JwtCookieUtil {
         }
         return null;
     }
+
+    public void setTempTokenCookie(HttpServletResponse response, String tempToken, Duration duration) {
+        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getTwofa(), tempToken)
+                .httpOnly(true)
+                .secure(authProperties.getCookiesProperties().isSecure())
+                .path("/")
+                .sameSite(authProperties.getCookiesProperties().getSameSite())
+                .maxAge(duration)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void clearTempTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getTwofa(), "")
+                .httpOnly(true)
+                .secure(authProperties.getCookiesProperties().isSecure())
+                .path("/")
+                .sameSite(authProperties.getCookiesProperties().getSameSite())
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public String extractTempTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+        for (Cookie cookie : request.getCookies()) {
+            if (authProperties.getCookieNames().getTwofa().equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
 }

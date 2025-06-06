@@ -20,6 +20,7 @@ public class AuthProperties {
         private int accessTokenMin;
         private int refreshShortMin;
         private int refreshLongMin;
+        private int twofaShortMin;
     }
 
     @Data
@@ -33,5 +34,6 @@ public class AuthProperties {
     public static class CookieNames {
         private String access;
         private String refresh;
+        private String twofa;
     }
 }

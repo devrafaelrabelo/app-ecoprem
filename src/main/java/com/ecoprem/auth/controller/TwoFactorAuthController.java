@@ -1,5 +1,6 @@
 package com.ecoprem.auth.controller;
 
+import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.entity.auth.BackupCode;
 import com.ecoprem.entity.auth.Pending2FALogin;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -33,9 +35,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Tag(name = "Two-Factor Auth", description = "Gerenciamento de autenticação em dois fatores (2FA)")
@@ -49,6 +49,7 @@ public class TwoFactorAuthController {
     private final Pending2FALoginRepository pending2FALoginRepository;
     private final BackupCodeService backupCodeService;
     private final AuthService authService;
+    private final JwtCookieUtil jwtCookieUtil;
 
     // Setup: Gera secret + QR code
     @PostMapping("/setup")
@@ -152,11 +153,13 @@ public class TwoFactorAuthController {
             @ApiResponse(responseCode = "400", description = "Código inválido ou token expirado"),
             @ApiResponse(responseCode = "401", description = "Token 2FA inválido ou expirado")
     })
-    public ResponseEntity<?> validateLogin2FA(@RequestBody @Valid TwoFactorLoginRequest request,
+    public ResponseEntity<?> validateLogin2FA(@Valid @RequestBody TwoFactorLoginRequest request,
                                               HttpServletRequest httpRequest,
                                               HttpServletResponse response) {
+        String tempToken = jwtCookieUtil.extractTempTokenFromCookie(httpRequest)
+                .orElseThrow(() -> new Invalid2FATokenException("Token 2FA não encontrado no cookie."));
 
-        Pending2FALogin pending = pending2FALoginRepository.findByTempToken(request.getTempToken())
+        Pending2FALogin pending = pending2FALoginRepository.findByTempToken(tempToken)
                 .orElseThrow(() -> new Invalid2FATokenException("Invalid or expired 2FA token."));
 
         if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -167,18 +170,18 @@ public class TwoFactorAuthController {
         User user = pending.getUser();
 
         boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
-
-        // Se o TOTP falhar, tenta código de backup
         if (!validCode && !backupCodeService.validateBackupCode(user, request.getTwoFactorCode())) {
             throw new Invalid2FACodeException("The 2FA code is incorrect.");
         }
 
         LoginWithRefreshResponse loginResponse = authService.completeLogin(user, request.isRememberMe(), httpRequest, response);
-
         pending2FALoginRepository.delete(pending);
+
+        jwtCookieUtil.clearTempTokenCookie(response);
 
         return ResponseEntity.ok(loginResponse);
     }
+
 
 
     @GetMapping("/backup-codes")
