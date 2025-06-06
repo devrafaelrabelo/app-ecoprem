@@ -2,6 +2,7 @@ package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
+import com.ecoprem.auth.exception.MissingTokenException;
 import com.ecoprem.entity.auth.BackupCode;
 import com.ecoprem.entity.auth.Pending2FALogin;
 import com.ecoprem.entity.auth.User;
@@ -162,24 +163,25 @@ public class TwoFactorAuthController {
         Pending2FALogin pending = pending2FALoginRepository.findByTempToken(tempToken)
                 .orElseThrow(() -> new Invalid2FATokenException("Invalid or expired 2FA token."));
 
-        if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
-            pending2FALoginRepository.delete(pending);
-            throw new Expired2FATokenException("The 2FA token has expired. Please login again.");
+        try {
+            if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
+                throw new Expired2FATokenException("The 2FA token has expired. Please login again.");
+            }
+
+            User user = pending.getUser();
+
+            boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
+            if (!validCode && !backupCodeService.validateBackupCode(user, request.getTwoFactorCode())) {
+                throw new Invalid2FACodeException("The 2FA code is incorrect.");
+            }
+
+            LoginWithRefreshResponse loginResponse = authService.completeLogin(user, request.isRememberMe(), httpRequest, response);
+            return ResponseEntity.ok(loginResponse);
+
+        } finally {
+            pending2FALoginRepository.delete(pending); // sempre remove o token do banco
+            jwtCookieUtil.clearTempTokenCookie(response); // sempre limpa o cookie
         }
-
-        User user = pending.getUser();
-
-        boolean validCode = twoFactorAuthService.verifyCode(user.getTwoFactorSecret(), request.getTwoFactorCode());
-        if (!validCode && !backupCodeService.validateBackupCode(user, request.getTwoFactorCode())) {
-            throw new Invalid2FACodeException("The 2FA code is incorrect.");
-        }
-
-        LoginWithRefreshResponse loginResponse = authService.completeLogin(user, request.isRememberMe(), httpRequest, response);
-        pending2FALoginRepository.delete(pending);
-
-        jwtCookieUtil.clearTempTokenCookie(response);
-
-        return ResponseEntity.ok(loginResponse);
     }
 
 

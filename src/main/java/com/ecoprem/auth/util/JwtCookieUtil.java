@@ -10,6 +10,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Optional;
 
 @Component
 public class JwtCookieUtil {
@@ -104,13 +105,13 @@ public class JwtCookieUtil {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
-    public String extractTempTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
+    public Optional<String> extractTempTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) return Optional.empty();
         for (Cookie cookie : request.getCookies()) {
             if (authProperties.getCookieNames().getTwofa().equals(cookie.getName())) {
-                return cookie.getValue();
+                return Optional.ofNullable(cookie.getValue());
             }
         }
-        return null;
+        return Optional.empty();
     }
 }
