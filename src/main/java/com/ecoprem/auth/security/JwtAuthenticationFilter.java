@@ -1,6 +1,6 @@
 package com.ecoprem.auth.security;
 
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.repository.UserRepository;
 import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.JwtCookieUtil;

@@ -1,13 +1,13 @@
-package com.ecoprem.entity;
+package com.ecoprem.entity.auth;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_group")
+@Table(name = "role")
 @Data
-public class UserGroup {
+public class Role {
 
     @Id
     private UUID id;
@@ -17,6 +17,6 @@ public class UserGroup {
 
     private String description;
 
-    @Column(name = "created_by")
-    private UUID createdBy;
+    @Column(name = "is_system_role")
+    private boolean systemRole;
 }

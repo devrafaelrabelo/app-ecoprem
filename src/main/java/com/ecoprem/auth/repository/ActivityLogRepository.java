@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.entity.ActivityLog;
+import com.ecoprem.entity.auth.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

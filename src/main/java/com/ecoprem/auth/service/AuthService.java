@@ -7,7 +7,7 @@ import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
-import com.ecoprem.entity.*;
+import com.ecoprem.entity.auth.*;
 import com.github.benmanes.caffeine.cache.Cache;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;

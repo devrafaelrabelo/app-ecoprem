@@ -1,7 +1,7 @@
 package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.ActiveSessionResponse;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.service.ActiveSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

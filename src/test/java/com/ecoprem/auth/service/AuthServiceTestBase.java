@@ -1,7 +1,7 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.LoginMetadataExtractor;

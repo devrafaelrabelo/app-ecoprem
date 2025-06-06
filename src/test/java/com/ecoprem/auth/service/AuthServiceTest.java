@@ -261,8 +261,8 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
 import com.ecoprem.auth.dto.LoginResult;
-import com.ecoprem.entity.Role;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.Role;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

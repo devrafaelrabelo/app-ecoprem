@@ -1,7 +1,7 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.entity.RefreshToken;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.RefreshToken;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.RefreshTokenExpiredException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import jakarta.transaction.Transactional;

@@ -1,5 +1,7 @@
-package com.ecoprem.entity;
+package com.ecoprem.entity.auth;
 
+import com.ecoprem.entity.security.AccessLevel;
+import com.ecoprem.entity.common.Department;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;

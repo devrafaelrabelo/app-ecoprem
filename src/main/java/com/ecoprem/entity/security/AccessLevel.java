@@ -1,4 +1,4 @@
-package com.ecoprem.entity;
+package com.ecoprem.entity.security;
 
 import jakarta.persistence.*;
 import lombok.Data;

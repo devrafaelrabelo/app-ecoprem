@@ -1,22 +1,22 @@
-package com.ecoprem.entity;
+package com.ecoprem.entity.auth;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_status")
+@Table(name = "user_group")
 @Data
-public class UserStatus {
+public class UserGroup {
 
     @Id
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String status;
+    private String name;
 
     private String description;
 
-    @Column(name = "is_active")
-    private boolean active;
+    @Column(name = "created_by")
+    private UUID createdBy;
 }

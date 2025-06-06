@@ -1,8 +1,8 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.ActivityLogResponse;
-import com.ecoprem.entity.ActivityLog;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.ActivityLog;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.repository.ActivityLogRepository;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import jakarta.servlet.http.HttpServletRequest;

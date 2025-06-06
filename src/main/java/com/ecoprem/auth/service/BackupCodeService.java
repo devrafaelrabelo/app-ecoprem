@@ -1,7 +1,7 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.entity.BackupCode;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.BackupCode;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.repository.BackupCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,28 +20,32 @@ public class BackupCodeService {
     private final BackupCodeRepository backupCodeRepository;
 
     public List<String> generateBackupCodes(User user, int quantity) {
-        // Remove códigos antigos
-        List<BackupCode> oldCodes = backupCodeRepository.findByUser(user);
-        backupCodeRepository.deleteAll(oldCodes);
+        // 1. Remove todos os códigos antigos
+        deleteCodesByUser(user);
 
-        List<String> codes = new ArrayList<>();
-        SecureRandom random = new SecureRandom();
+        // 2. Gera os novos códigos
+        List<String> generatedCodes = new ArrayList<>();
+        List<BackupCode> entities = new ArrayList<>();
 
         for (int i = 0; i < quantity; i++) {
-            byte[] buffer = new byte[6];  // 6 bytes ~ 8 chars base32-like
-            random.nextBytes(buffer);
-            String code = Base64.getUrlEncoder().withoutPadding().encodeToString(buffer);
+            String code = generateRandomCode(); // ex: 8 caracteres alfanuméricos
 
             BackupCode backupCode = new BackupCode();
             backupCode.setId(UUID.randomUUID());
             backupCode.setUser(user);
             backupCode.setCode(code);
+            backupCode.setUsed(false);
             backupCode.setCreatedAt(LocalDateTime.now());
-            backupCodeRepository.save(backupCode);
 
-            codes.add(code);
+            generatedCodes.add(code);
+            entities.add(backupCode);
         }
-        return codes;
+
+        // 3. Salva os novos códigos no banco
+        backupCodeRepository.saveAll(entities);
+
+        // 4. Retorna os códigos (em texto) para exibição
+        return generatedCodes;
     }
 
     public boolean validateBackupCode(User user, String code) {
@@ -60,16 +64,25 @@ public class BackupCodeService {
 
     public List<String> regenerateBackupCodes(User user, int quantity) {
         // Deleta todos os códigos antigos
-        List<BackupCode> oldCodes = backupCodeRepository.findByUser(user);
-        backupCodeRepository.deleteAll(oldCodes);
+        deleteCodesByUser(user);
 
         // Reutiliza o método de geração já existente
         return generateBackupCodes(user, quantity);
     }
 
     public void deleteAllBackupCodes(User user) {
+        deleteCodesByUser(user);
+    }
+
+    private String generateRandomCode() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+    }
+
+    private void deleteCodesByUser(User user) {
         List<BackupCode> codes = backupCodeRepository.findByUser(user);
-        backupCodeRepository.deleteAll(codes);
+        if (!codes.isEmpty()) {
+            backupCodeRepository.deleteAll(codes);
+        }
     }
 
 }

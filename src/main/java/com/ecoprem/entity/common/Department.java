@@ -1,13 +1,13 @@
-package com.ecoprem.entity;
+package com.ecoprem.entity.common;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.UUID;
 
 @Entity
-@Table(name = "role")
+@Table(name = "department")
 @Data
-public class Role {
+public class Department {
 
     @Id
     private UUID id;
@@ -17,6 +17,6 @@ public class Role {
 
     private String description;
 
-    @Column(name = "is_system_role")
-    private boolean systemRole;
+    @Column(name = "manager_id")
+    private UUID managerId;
 }

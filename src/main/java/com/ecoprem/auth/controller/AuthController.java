@@ -2,7 +2,7 @@ package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
-import com.ecoprem.entity.User;
+import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.security.JwtTokenProvider;
