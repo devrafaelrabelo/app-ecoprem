@@ -8,6 +8,8 @@ import com.ecoprem.auth.util.LoginMetadataExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActiveSessionService {
@@ -44,6 +47,10 @@ public class ActiveSessionService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public Optional<ActiveSession> findBySessionId(String sessionId) {
+        return activeSessionRepository.findBySessionId(sessionId);
     }
 
     private ActiveSessionResponse toResponse(ActiveSession session) {
@@ -85,5 +92,33 @@ public class ActiveSessionService {
             return true;
         }
         return false;
+    }
+
+    @Transactional
+    public void updateLastAccessIfValid(String sessionId, User user) {
+        activeSessionRepository.findBySessionId(sessionId).ifPresent(session -> {
+            if (session.getUser().getId().equals(user.getId())) {
+                if (session.getExpiresAt() != null && session.getExpiresAt().isBefore(LocalDateTime.now())) {
+                    // Sessão expirada: remova ou ignore
+                    activeSessionRepository.delete(session);
+                    return;
+                }
+
+                session.setLastAccessAt(LocalDateTime.now());
+                activeSessionRepository.save(session);
+            }
+        });
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // Executa a cada hora em ponto
+    @Transactional
+    public void cleanExpiredSessions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<ActiveSession> expiredSessions = activeSessionRepository.findByExpiresAtBefore(now);
+
+        if (!expiredSessions.isEmpty()) {
+            activeSessionRepository.deleteAll(expiredSessions);
+            log.info("🧹 Limpando {} sessões expiradas.", expiredSessions.size());
+        }
     }
 }

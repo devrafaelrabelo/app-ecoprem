@@ -1,11 +1,14 @@
 package com.ecoprem.auth.util;
 
+import com.ecoprem.entity.auth.ActiveSession;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.InetAddress;
 
+@Slf4j
 @Component
 public class LoginMetadataExtractor {
 
@@ -13,10 +16,7 @@ public class LoginMetadataExtractor {
 
     public String getClientIp(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
-        }
-        return xfHeader.split(",")[0];
+        return (xfHeader != null) ? xfHeader.split(",")[0] : request.getRemoteAddr();
     }
 
     public String getUserAgent(HttpServletRequest request) {
@@ -47,10 +47,8 @@ public class LoginMetadataExtractor {
         return "Desktop";
     }
 
-    // NOVO: Busca localização real, ou fake se falhar
     public String getLocation(String ipAddress) {
         try {
-            // Ignorar localhost/dev
             if ("127.0.0.1".equals(ipAddress) || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
                 return "Localhost (Dev)";
             }
@@ -60,22 +58,46 @@ public class LoginMetadataExtractor {
 
             if (response != null && "success".equals(response.getStatus())) {
                 return response.getCity() + ", " + response.getCountry();
-            } else {
-                return "Unknown";
             }
         } catch (Exception e) {
-            System.out.println("Failed to get location for IP " + ipAddress);
-            return "Unknown";
+            log.warn("🌐 Falha ao buscar localização para IP {}: {}", ipAddress, e.getMessage());
         }
+
+        return "Unknown";
     }
 
     public String getHostname(String ipAddress) {
         try {
-            InetAddress inetAddress = InetAddress.getByName(ipAddress);
-            return inetAddress.getHostName();
+            return InetAddress.getByName(ipAddress).getHostName();
         } catch (Exception e) {
-            System.out.println("Failed to resolve hostname for IP: " + ipAddress);
+            log.warn("🔍 Falha ao resolver hostname para IP {}: {}", ipAddress, e.getMessage());
             return "Unknown";
         }
+    }
+
+    public boolean isSessionMetadataMatching(ActiveSession session, HttpServletRequest request) {
+        String userAgent = getUserAgent(request);
+        String currentIp = getClientIp(request);
+        String currentBrowser = detectBrowser(userAgent);
+        String currentOS = detectOS(userAgent);
+        String currentDevice = detectDevice(userAgent);
+
+        boolean match = session.getIpAddress().equals(currentIp)
+                && session.getBrowser().equals(currentBrowser)
+                && session.getOperatingSystem().equals(currentOS)
+                && session.getDevice().equals(currentDevice);
+
+        if (!match) {
+            log.warn("""
+                🔍 Sessão suspeita detectada:
+                  → Esperado: IP={}, Browser={}, OS={}, Device={}
+                  → Atual:    IP={}, Browser={}, OS={}, Device={}
+                """,
+                    session.getIpAddress(), session.getBrowser(), session.getOperatingSystem(), session.getDevice(),
+                    currentIp, currentBrowser, currentOS, currentDevice
+            );
+        }
+
+        return match;
     }
 }

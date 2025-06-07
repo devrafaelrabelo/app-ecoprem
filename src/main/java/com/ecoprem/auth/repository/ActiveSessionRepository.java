@@ -3,6 +3,7 @@ package com.ecoprem.auth.repository;
 import com.ecoprem.entity.auth.ActiveSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,5 +13,6 @@ public interface ActiveSessionRepository extends JpaRepository<ActiveSession, UU
     void deleteBySessionId(String sessionId);
     void deleteByUserId(UUID userId);
     Optional<ActiveSession> findBySessionId(String sessionId);
+    List<ActiveSession> findByExpiresAtBefore(LocalDateTime time);
 
 }

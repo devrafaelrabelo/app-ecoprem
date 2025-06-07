@@ -52,6 +52,11 @@ public class JwtTokenProvider {
         return UUID.fromString(claims.getSubject());
     }
 
+    public String getSessionIdFromJWT(String token) {
+        Claims claims = extractClaims(token);
+        return claims.get("sessionId", String.class);
+    }
+
     public boolean isTokenValid(String token) {
         try {
             Jwts.parser()

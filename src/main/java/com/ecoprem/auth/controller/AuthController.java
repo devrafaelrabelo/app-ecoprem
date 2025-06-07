@@ -1,5 +1,6 @@
 package com.ecoprem.auth.controller;
 
+import com.ecoprem.auth.config.AuthPathProperties;
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.entity.auth.User;
@@ -37,14 +38,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-
-    private final JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private JwtCookieUtil jwtCookieUtil;
-
-    @Autowired
-    private AuthProperties authProperties;
+    private final JwtCookieUtil jwtCookieUtil;
+    private final AuthPathProperties authPathProperties;
+    private final AuthProperties authProperties;
 
     @GetMapping("/DevTest")
     public ResponseEntity<Map<String, Object>> getAuthConfig() {
@@ -67,6 +63,7 @@ public class AuthController {
         result.put("cookieNameRefresh", names.getRefresh());
         result.put("cookieName2FA", names.getTwofa());
 
+        result.put("publicPaths", authPathProperties.getPublicPaths());
 
         return ResponseEntity.ok(result);
     }

@@ -1,7 +1,7 @@
 package com.ecoprem.auth.security;
 
-import com.ecoprem.entity.auth.User;
-import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.auth.config.AuthPathProperties;
+import com.ecoprem.auth.exception.AuthenticationException;
 import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import jakarta.servlet.FilterChain;
@@ -9,24 +9,25 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Optional;
-import java.util.UUID;
 
+
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtCookieUtil jwtCookieUtil;
-    private final UserRepository userRepository;
+    private final SessionAuthenticationProcessor sessionAuthenticationProcessor;
     private final RevokedTokenService revokedTokenService;
+    private final AuthPathProperties authPathProperties;
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,34 +35,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        if (path.equals("/api/auth/login") ||
-                path.equals("/api/auth/refresh") ||
-                path.startsWith("/api/auth/2fa") ||
-                path.equals("/api/auth/register")) {
+        log.debug("Intercepted request path: {}", path);
+
+        if (authPathProperties.getPublicPaths().contains(path)) {
+            log.debug("🔓 Skipping auth for public path: {}", path);
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = jwtCookieUtil.extractTokenFromCookie(request);
-        if (token != null && jwtTokenProvider.isTokenValid(token)) {
-            if (revokedTokenService.isTokenRevoked(token)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("{'error': 'Token has been revoked.'}");
-                return;
-            }
+        if (token == null) {
+            log.debug("No JWT token found in cookies.");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            UUID userId = jwtTokenProvider.getUserIdFromJWT(token);
-            Optional<User> userOpt = userRepository.findById(userId);
+        if (!jwtTokenProvider.isTokenValid(token)) {
+            log.debug("Invalid JWT token.");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            if (userOpt.isPresent()) {
-                User user = userOpt.get();
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        user, null, null);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+        if (revokedTokenService.isTokenRevoked(token)) {
+            log.warn("Token has been revoked: {}", token);
+            respondUnauthorized(response, "Token has been revoked.");
+            return;
+        }
+
+        try {
+            log.debug("Token is valid. Authenticating session...");
+            sessionAuthenticationProcessor.authenticateFromToken(token, request, response);
+            log.debug("Authentication complete.");
+        } catch (AuthenticationException ex) {
+            log.warn("Authentication failed: {}", ex.getMessage());
+            respondUnauthorized(response, ex.getMessage());
+            return;
         }
 
         filterChain.doFilter(request, response);
     }
+
+    private void respondUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
+    }
+
+
 }

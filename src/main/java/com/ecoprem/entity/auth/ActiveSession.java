@@ -17,7 +17,7 @@ public class ActiveSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "session_id", nullable = false)
+    @Column(name = "session_id", nullable = false, unique = true)
     private String sessionId;
 
     private String device;
@@ -35,4 +35,7 @@ public class ActiveSession {
 
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
+
+    @Column(name = "lastAccess_at")
+    private LocalDateTime lastAccessAt;
 }
