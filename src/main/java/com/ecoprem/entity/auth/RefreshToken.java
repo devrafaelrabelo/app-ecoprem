@@ -7,16 +7,22 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "refresh_token")
 @Data
+@Table(
+        name = "refresh_token",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "session_id"})
+)
 public class RefreshToken {
 
     @Id
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "session_id", nullable = false)
+    private String sessionId;
 
     @Column(nullable = false, unique = true)
     private String token;

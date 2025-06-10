@@ -18,6 +18,7 @@ import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -32,15 +33,16 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(UUID userId, String email, String role, String sessionId) {
+    public String generateToken(UUID userId, String email, List<String> roles, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
         return Jwts.builder()
                 .subject(userId.toString())
+
                 .claim("email", email)
-                .claim("role", role)
-                .claim("sessionId", sessionId) // 💡 importante!
+                .claim("roles", roles) // ← agora plural
+                .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -89,5 +91,9 @@ public class JwtTokenProvider {
     public LocalDateTime getExpirationDateFromJWT(String token) {
         Claims claims = extractClaims(token);
         return claims.getExpiration().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    public boolean isTokenExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
     }
 }

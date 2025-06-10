@@ -1,7 +1,7 @@
 package com.ecoprem.admin.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
-import com.ecoprem.entity.auth.Role;
+import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.EmailAlreadyExistsException;
 import com.ecoprem.auth.exception.RoleNotFoundException;
@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
@@ -31,10 +32,14 @@ public class AdminUserService {
     public void createUserByAdmin(RegisterRequest request, User adminUser) {
         validateUserCreation(request);
 
-        Role role = roleRepository.findByName(request.getRole())
-                .orElseThrow(() -> new RoleNotFoundException("Role not found: " + request.getRole()));
+        List<String> roleNames = request.getRoles(); // precisa ser List<String>
+        List<Role> roles = roleRepository.findByNameIn(roleNames);
 
-        User newUser = buildUserFromRequest(request, role);
+        if (roles.size() != roleNames.size()) {
+            throw new RoleNotFoundException("Algumas roles informadas não foram encontradas: " + roleNames);
+        }
+
+        User newUser = buildUserFromRequest(request, roles);
 
         userRepository.save(newUser);
 
@@ -66,7 +71,7 @@ public class AdminUserService {
         }
     }
 
-    private User buildUserFromRequest(RegisterRequest request, Role role) {
+    private User buildUserFromRequest(RegisterRequest request, List<Role> roles) {
         User user = new User();
         user.setId(UUID.randomUUID());
         user.setFirstName(request.getFirstName());
@@ -78,7 +83,7 @@ public class AdminUserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(role);
+        user.setRoles(roles); // ← agora usando lista
         user.setEmailVerified(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

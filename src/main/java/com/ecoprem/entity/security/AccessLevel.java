@@ -1,7 +1,10 @@
 package com.ecoprem.entity.security;
 
+import com.ecoprem.entity.auth.User;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -19,4 +22,7 @@ public class AccessLevel {
     private int levelNumber;
 
     private String description;
+
+    @OneToMany(mappedBy = "accessLevel", fetch = FetchType.LAZY)
+    private List<User> users;
 }

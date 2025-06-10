@@ -2,8 +2,10 @@ package com.ecoprem.auth.security;
 
 import com.ecoprem.auth.config.AuthPathProperties;
 import com.ecoprem.auth.exception.AuthenticationException;
+import com.ecoprem.auth.repository.ActiveSessionRepository;
 import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.JwtCookieUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +17,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDateTime;
+import java.util.UUID;
 
 
 @Slf4j
@@ -27,6 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final SessionAuthenticationProcessor sessionAuthenticationProcessor;
     private final RevokedTokenService revokedTokenService;
     private final AuthPathProperties authPathProperties;
+    private final ActiveSessionRepository activeSessionRepository;
 
 
     @Override
@@ -63,9 +71,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            log.debug("Token is valid. Authenticating session...");
+            String sessionId = jwtTokenProvider.getSessionIdFromJWT(token);
+            log.debug("Validating sessionId: {}", sessionId);
+
+            activeSessionRepository.findBySessionId(sessionId).ifPresentOrElse(session -> {
+                LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+                if (session.getExpiresAt().isBefore(now)) {
+                    log.warn("Session has expired: {}", sessionId);
+                    throw new AuthenticationException("Sessão expirada.");
+                }
+            }, () -> {
+                log.warn("Session not found for sessionId: {}", sessionId);
+                throw new AuthenticationException("Sessão inválida.");
+            });
+
+            log.debug("Token and session are valid. Proceeding with authentication.");
             sessionAuthenticationProcessor.authenticateFromToken(token, request, response);
-            log.debug("Authentication complete.");
         } catch (AuthenticationException ex) {
             log.warn("Authentication failed: {}", ex.getMessage());
             respondUnauthorized(response, ex.getMessage());
@@ -80,6 +101,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType("application/json");
         response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
-
-
 }

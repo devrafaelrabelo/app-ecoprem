@@ -1,14 +1,16 @@
 package com.ecoprem.auth.service;
 
-import com.ecoprem.entity.auth.RefreshToken;
-import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.RefreshTokenExpiredException;
 import com.ecoprem.auth.repository.RefreshTokenRepository;
+import com.ecoprem.entity.auth.RefreshToken;
+import com.ecoprem.entity.auth.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -18,37 +20,49 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     /**
-     * Cria um novo refresh token e invalida o(s) anterior(es) para o usuário.
-     *
-     * @param user       Usuário dono do token
-     * @param daysValid  Quantidade de dias que o token será válido (ex: 30 para remember-me)
-     * @return           O refresh token criado
+     * Cria e salva um novo RefreshToken com duração personalizada para uma sessão específica.
      */
-    @Transactional
-    public RefreshToken createRefreshToken(User user, int daysValid) {
-        // 🔄 Remove tokens antigos para este usuário (refresh rotativo)
-        refreshTokenRepository.deleteByUserId(user.getId());
-        refreshTokenRepository.flush(); // Adicione esta linha!
-
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setId(UUID.randomUUID());
-        refreshToken.setUser(user);
-        refreshToken.setToken(UUID.randomUUID().toString());
-        refreshToken.setExpiresAt(LocalDateTime.now().plusDays(daysValid));  // ✅ usando o parâmetro corretamente
-        refreshToken.setCreatedAt(LocalDateTime.now());
-
-        return refreshTokenRepository.save(refreshToken);
+    public RefreshToken createRefreshToken(User user, String sessionId, Duration duration) {
+        RefreshToken token = new RefreshToken();
+        token.setId(UUID.randomUUID());
+        token.setUser(user);
+        token.setSessionId(sessionId);
+        token.setToken(UUID.randomUUID().toString());
+        token.setCreatedAt(LocalDateTime.now());
+        token.setExpiresAt(LocalDateTime.now().plus(duration));
+        return refreshTokenRepository.save(token);
     }
 
     /**
-     * Verifica se o token ainda está válido (não expirou).
-     * Se estiver expirado, já remove e lança exception.
+     * Remove todos os tokens de refresh associados ao usuário.
      */
-    public RefreshToken verifyExpiration(RefreshToken token) {
+    @Transactional
+    public void deleteByUserId(UUID userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
+
+    /**
+     * Remove o token de refresh associado à sessão do usuário.
+     */
+    @Transactional
+    public void deleteByUserIdAndSessionId(UUID userId, String sessionId) {
+        refreshTokenRepository.deleteByUserIdAndSessionId(userId, sessionId);
+    }
+
+    /**
+     * Busca um token válido por usuário e sessão. Lança exceção se estiver expirado.
+     */
+    public RefreshToken findValidToken(UUID userId, String sessionId) {
+        Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByUserIdAndSessionId(userId, sessionId);
+
+        RefreshToken token = tokenOpt.orElseThrow(() ->
+                new RefreshTokenExpiredException("Refresh token não encontrado para esta sessão."));
+
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
-            throw new RefreshTokenExpiredException("Refresh token expired. Please login again.");
+            throw new RefreshTokenExpiredException("Refresh token expirado. Faça login novamente.");
         }
+
         return token;
     }
 }

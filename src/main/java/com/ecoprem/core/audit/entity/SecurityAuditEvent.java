@@ -13,20 +13,25 @@ import java.util.UUID;
 public class SecurityAuditEvent {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_security_audit_user"))
     private User user;
 
-    private String eventType; // ex: "SUSPICIOUS_SESSION", "TOKEN_REVOKED"
+    @Column(name = "event_type", length = 255)
+    private String eventType;
 
+    @Column(length = 255)
     private String description;
 
-    @Column(name = "ip_address")
+    @Column(name = "ip_address", length = 255)
     private String ipAddress;
 
+    @Column(name = "user_agent", length = 255)
     private String userAgent;
 
+    @Column(nullable = false)
     private LocalDateTime timestamp;
 }

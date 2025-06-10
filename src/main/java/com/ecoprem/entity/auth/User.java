@@ -2,9 +2,12 @@ package com.ecoprem.entity.auth;
 
 import com.ecoprem.entity.security.AccessLevel;
 import com.ecoprem.entity.common.Department;
+import com.ecoprem.entity.security.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -118,23 +121,35 @@ public class User {
     private LocalDateTime accountLockedAt;
 
     // RELACIONAMENTOS
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private List<Role> roles = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "access_level_id")
     private AccessLevel accessLevel;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
-    private UserStatus userStatus;
+    private UserStatus status;
 
-    @ManyToOne
-    @JoinColumn(name = "department_id")
-    private Department department;
+    @ManyToMany
+    @JoinTable(
+            name = "user_department",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "department_id")
+    )
+    private List<Department> departments = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private UserGroup userGroup;
+    @ManyToMany
+    @JoinTable(
+            name = "user_user_group",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_group_id")
+    )
+    private List<UserGroup> userGroups = new ArrayList<>();
 }

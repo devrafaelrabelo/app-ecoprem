@@ -1,7 +1,10 @@
 package com.ecoprem.entity.common;
 
+import com.ecoprem.entity.auth.User;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -17,6 +20,10 @@ public class Department {
 
     private String description;
 
-    @Column(name = "manager_id")
-    private UUID managerId;
+    @OneToOne
+    @JoinColumn(name = "manager_id")
+    private User manager;
+
+    @ManyToMany(mappedBy = "departments")
+    private List<User> users;
 }

@@ -1,22 +1,34 @@
-package com.ecoprem.auth.util;
-
+package com.ecoprem.auth.util;import com.ecoprem.auth.util.GeoIpResponse;
 import com.ecoprem.entity.auth.ActiveSession;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import nl.basjes.parse.useragent.UserAgent;
+import nl.basjes.parse.useragent.UserAgentAnalyzer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.InetAddress;
 
-@Slf4j
 @Component
+@Slf4j
 public class LoginMetadataExtractor {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final UserAgentAnalyzer userAgentAnalyzer;
+
+    public LoginMetadataExtractor() {
+        this.userAgentAnalyzer = UserAgentAnalyzer
+                .newBuilder()
+                .hideMatcherLoadStats()
+                .withCache(1000)
+                .build();
+    }
 
     public String getClientIp(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
-        return (xfHeader != null) ? xfHeader.split(",")[0] : request.getRemoteAddr();
+        String ip = (xfHeader != null) ? xfHeader.split(",")[0].trim() : request.getRemoteAddr();
+        if ("0:0:0:0:0:0:0:1".equals(ip)) ip = "127.0.0.1";
+        return ip;
     }
 
     public String getUserAgent(HttpServletRequest request) {
@@ -25,44 +37,33 @@ public class LoginMetadataExtractor {
     }
 
     public String detectBrowser(String userAgent) {
-        if (userAgent.contains("Chrome")) return "Chrome";
-        if (userAgent.contains("Firefox")) return "Firefox";
-        if (userAgent.contains("Safari") && !userAgent.contains("Chrome")) return "Safari";
-        if (userAgent.contains("Edge")) return "Edge";
-        return "Other";
+        UserAgent agent = userAgentAnalyzer.parse(userAgent);
+        return agent.getValue("AgentName");
     }
 
     public String detectOS(String userAgent) {
-        if (userAgent.contains("Windows")) return "Windows";
-        if (userAgent.contains("Mac")) return "Mac";
-        if (userAgent.contains("X11")) return "Unix";
-        if (userAgent.contains("Android")) return "Android";
-        if (userAgent.contains("iPhone")) return "iOS";
-        return "Other";
+        UserAgent agent = userAgentAnalyzer.parse(userAgent);
+        return agent.getValue("OperatingSystemName");
     }
 
     public String detectDevice(String userAgent) {
-        if (userAgent.contains("Mobi")) return "Mobile";
-        if (userAgent.contains("Tablet")) return "Tablet";
-        return "Desktop";
+        UserAgent agent = userAgentAnalyzer.parse(userAgent);
+        return agent.getValue("DeviceClass"); // Ex: Desktop, Mobile, Tablet
     }
 
     public String getLocation(String ipAddress) {
         try {
-            if ("127.0.0.1".equals(ipAddress) || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
+            if ("127.0.0.1".equals(ipAddress)) {
                 return "Localhost (Dev)";
             }
-
             String url = "http://ip-api.com/json/" + ipAddress;
             GeoIpResponse response = restTemplate.getForObject(url, GeoIpResponse.class);
-
             if (response != null && "success".equals(response.getStatus())) {
                 return response.getCity() + ", " + response.getCountry();
             }
         } catch (Exception e) {
             log.warn("🌐 Falha ao buscar localização para IP {}: {}", ipAddress, e.getMessage());
         }
-
         return "Unknown";
     }
 

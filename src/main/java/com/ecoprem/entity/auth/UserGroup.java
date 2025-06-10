@@ -2,6 +2,9 @@ package com.ecoprem.entity.auth;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -17,6 +20,10 @@ public class UserGroup {
 
     private String description;
 
-    @Column(name = "created_by")
-    private UUID createdBy;
+    @ManyToOne
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @ManyToMany(mappedBy = "userGroups", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<User> users = new ArrayList<>();
 }

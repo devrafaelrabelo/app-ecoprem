@@ -18,100 +18,89 @@ public class JwtCookieUtil {
     @Autowired
     private AuthProperties authProperties;
 
-    public void setTokenCookie(HttpServletResponse response, String token) {
-        System.out.println(authProperties.getCookieNames().getAccess());
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getAccess(), token)
-                .httpOnly(authProperties.getCookiesProperties().isHttpOnly())
+    private void addCookie(HttpServletResponse response, String name, String value, Duration duration, boolean httpOnly) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .httpOnly(httpOnly)
                 .secure(authProperties.getCookiesProperties().isSecure())
                 .path("/")
                 .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(Duration.ofMinutes(authProperties.getCookiesDurations().getAccessTokenMin()))
+                .maxAge(duration)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearCookie(HttpServletResponse response, String name, boolean httpOnly) {
+        addCookie(response, name, "", Duration.ZERO, httpOnly);
+    }
+
+    public void setTokenCookie(HttpServletResponse response, String token) {
+        addCookie(response,
+                authProperties.getCookieNames().getAccess(),
+                token,
+                Duration.ofMinutes(authProperties.getCookiesDurations().getAccessTokenMin()),
+                authProperties.getCookiesProperties().isHttpOnly()
+        );
     }
 
     public void clearTokenCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getAccess(), "")
-                .httpOnly(authProperties.getCookiesProperties().isHttpOnly())
-                .secure(authProperties.getCookiesProperties().isSecure())
-                .path("/")
-                .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(0)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        clearCookie(response,
+                authProperties.getCookieNames().getAccess(),
+                authProperties.getCookiesProperties().isHttpOnly()
+        );
     }
 
     public String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
-        for (Cookie cookie : request.getCookies()) {
-            if (authProperties.getCookieNames().getAccess().equals(cookie.getName())) {
-                return cookie.getValue();
-            }
-        }
-        return null;
+        return extractCookie(request, authProperties.getCookieNames().getAccess());
     }
 
     public void setRefreshTokenCookie(HttpServletResponse response, String token, Duration duration) {
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getRefresh(), token)
-                .httpOnly(authProperties.getCookiesProperties().isHttpOnly())
-                .secure(authProperties.getCookiesProperties().isSecure())
-                .path("/")
-                .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(duration)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        addCookie(response,
+                authProperties.getCookieNames().getRefresh(),
+                token,
+                duration,
+                authProperties.getCookiesProperties().isHttpOnly()
+        );
     }
 
     public void clearRefreshTokenCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getRefresh(), "")
-                .httpOnly(authProperties.getCookiesProperties().isHttpOnly())
-                .secure(authProperties.getCookiesProperties().isSecure())
-                .path("/")
-                .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(0)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        clearCookie(response,
+                authProperties.getCookieNames().getRefresh(),
+                authProperties.getCookiesProperties().isHttpOnly()
+        );
     }
 
     public String extractRefreshTokenFromCookie(HttpServletRequest request) {
+        return extractCookie(request, authProperties.getCookieNames().getRefresh());
+    }
+
+    public void setTempTokenCookie(HttpServletResponse response, String tempToken, Duration duration) {
+        addCookie(response,
+                authProperties.getCookieNames().getTwofa(),
+                tempToken,
+                duration,
+                true
+        );
+    }
+
+    public void clearTempTokenCookie(HttpServletResponse response) {
+        clearCookie(response,
+                authProperties.getCookieNames().getTwofa(),
+                true
+        );
+    }
+
+    public Optional<String> extractTempTokenFromCookie(HttpServletRequest request) {
+        String value = extractCookie(request, authProperties.getCookieNames().getTwofa());
+        return Optional.ofNullable(value);
+    }
+
+    private String extractCookie(HttpServletRequest request, String name) {
         if (request.getCookies() == null) return null;
         for (Cookie cookie : request.getCookies()) {
-            if (authProperties.getCookieNames().getRefresh().equals(cookie.getName())) {
+            if (name.equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }
         return null;
-    }
-
-    public void setTempTokenCookie(HttpServletResponse response, String tempToken, Duration duration) {
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getTwofa(), tempToken)
-                .httpOnly(true)
-                .secure(authProperties.getCookiesProperties().isSecure())
-                .path("/")
-                .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(duration)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    public void clearTempTokenCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(authProperties.getCookieNames().getTwofa(), "")
-                .httpOnly(true)
-                .secure(authProperties.getCookiesProperties().isSecure())
-                .path("/")
-                .sameSite(authProperties.getCookiesProperties().getSameSite())
-                .maxAge(0)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    public Optional<String> extractTempTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return Optional.empty();
-        for (Cookie cookie : request.getCookies()) {
-            if (authProperties.getCookieNames().getTwofa().equals(cookie.getName())) {
-                return Optional.ofNullable(cookie.getValue());
-            }
-        }
-        return Optional.empty();
     }
 }

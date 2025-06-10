@@ -1,23 +1,26 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.config.MailProperties;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MailService {
 
     private final JavaMailSender mailSender;
+    private final MailProperties mailProperties;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
-
+    /**
+     * Envia e-mail de notificação de conta bloqueada por excesso de tentativas de login.
+     */
     public void sendAccountLockedEmail(String to, String username) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
+        message.setFrom(mailProperties.getUsername());
         message.setTo(to);
         message.setSubject("🚫 Your EcoPrem Account Has Been Locked");
         message.setText("Hello " + username + ",\n\n"
@@ -26,6 +29,11 @@ public class MailService {
                 + "If this wasn't you, please contact our support team immediately.\n\n"
                 + "Best regards,\nThe EcoPrem Security Team");
 
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+            log.info("📧 E-mail de bloqueio enviado para {}", to);
+        } catch (Exception e) {
+            log.error("❌ Falha ao enviar e-mail de bloqueio para {}: {}", to, e.getMessage(), e);
+        }
     }
 }

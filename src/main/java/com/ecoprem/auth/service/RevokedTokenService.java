@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -16,16 +15,19 @@ public class RevokedTokenService {
     private final RevokedTokenRepository revokedTokenRepository;
 
     public void revokeToken(String token, User user, LocalDateTime expiresAt) {
-        RevokedToken revoked = new RevokedToken();
-        revoked.setId(UUID.randomUUID());
-        revoked.setToken(token);
-        revoked.setUser(user);
-        revoked.setExpiresAt(expiresAt);
-
-        revokedTokenRepository.save(revoked);
+        RevokedToken revokedToken = new RevokedToken();
+        revokedToken.setToken(token);
+        revokedToken.setUser(user);
+        revokedToken.setRevokedAt(LocalDateTime.now());
+        revokedToken.setExpiresAt(expiresAt);
+        revokedTokenRepository.save(revokedToken);
     }
 
     public boolean isTokenRevoked(String token) {
-        return revokedTokenRepository.findByToken(token).isPresent();
+        return revokedTokenRepository.existsByToken(token);
+    }
+
+    public void deleteExpiredTokens() {
+        revokedTokenRepository.deleteAllByExpiresAtBefore(LocalDateTime.now());
     }
 }

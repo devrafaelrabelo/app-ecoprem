@@ -1,11 +1,13 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.entity.auth.Role;
+import com.ecoprem.entity.security.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface RoleRepository extends JpaRepository<Role, UUID> {
-    Optional<Role> findByName(String name);
+    Optional<Role> findByName(String name); // ← esse método precisa existir
+    List<Role> findByNameIn(List<String> names); // ← esse método precisa existir
 }

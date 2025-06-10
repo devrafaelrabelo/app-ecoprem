@@ -1,9 +1,11 @@
 package com.ecoprem.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @Schema(description = "Resposta de configuração do 2FA, incluindo chave secreta e QR Code em base64.")
 public class TwoFactorSetupResponse {
 

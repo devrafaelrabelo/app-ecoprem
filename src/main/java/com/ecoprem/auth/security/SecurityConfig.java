@@ -1,7 +1,6 @@
 package com.ecoprem.auth.security;
 
-import com.ecoprem.core.audit.RequestAuditLogFilter;
-import jakarta.servlet.Filter;
+import com.ecoprem.core.audit.filter.RequestAuditLogFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,7 +50,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/DevTest").permitAll()
                         .requestMatchers("/api/auth/validate").permitAll()
+                        .requestMatchers("/api/auth/session").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/2fa/validate-login",

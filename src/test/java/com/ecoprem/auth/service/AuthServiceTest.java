@@ -261,7 +261,7 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
 import com.ecoprem.auth.dto.LoginResult;
-import com.ecoprem.entity.auth.Role;
+import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.*;
 import org.junit.jupiter.api.Test;
@@ -269,6 +269,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -288,14 +289,17 @@ class AuthServiceLoginTests extends AuthServiceTestBase {
 
         User user = createVerifiedUser();
         user.setPassword("encoded-password");
-        user.setRole(role);
+        role.setName("USER");
+        user.setRoles(List.of(role));
 
         LoginRequest request = createLoginRequest();
         request.setPassword("raw-password");
 
         when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("raw-password", "encoded-password")).thenReturn(true);
-        when(jwtTokenProvider.generateToken(any(), eq(testEmail), eq("USER"), anyString())).thenReturn(token);
+        when(jwtTokenProvider.generateToken(
+                any(), eq(testEmail), eq(List.of("USER")), anyString())
+        ).thenReturn(token);
 
         LoginResult result = authService.login(request, servletRequest);
 

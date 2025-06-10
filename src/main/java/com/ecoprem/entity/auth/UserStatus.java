@@ -10,9 +10,10 @@ import java.util.UUID;
 public class UserStatus {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false, length = 50)
     private String status;
 
     private String description;

@@ -20,6 +20,9 @@ public class RevokedToken {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    @Column(name = "revoked_at", nullable = false)
+    private LocalDateTime revokedAt;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

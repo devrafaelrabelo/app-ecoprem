@@ -3,6 +3,9 @@ package com.ecoprem.auth.controller;
 import com.ecoprem.auth.config.AuthPathProperties;
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
+import com.ecoprem.auth.service.LoginFinalizerService;
+import com.ecoprem.auth.service.TokenService;
+import com.ecoprem.auth.service.UserService;
 import com.ecoprem.entity.auth.User;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.util.JwtCookieUtil;
@@ -37,10 +40,12 @@ import java.util.Map;
 @Slf4j
 public class AuthController {
 
-    private final AuthService authService;
+    private final UserService userService;
     private final JwtCookieUtil jwtCookieUtil;
     private final AuthPathProperties authPathProperties;
     private final AuthProperties authProperties;
+    private final AuthService authService;
+    private final LoginFinalizerService loginFinalizerService;
 
     @GetMapping("/DevTest")
     public ResponseEntity<Map<String, Object>> getAuthConfig() {
@@ -89,7 +94,7 @@ public class AuthController {
                                    HttpServletResponse response) {
         try {
             LoginResult result = authService.login(request, servletRequest);
-            LoginWithRefreshResponse loginResponse = authService.completeLogin(
+            LoginWithRefreshResponse loginResponse = loginFinalizerService.finalizeLogin(
                     result.user(),
                     request.isRememberMe(),
                     servletRequest,
@@ -98,49 +103,61 @@ public class AuthController {
             return ResponseEntity.ok(loginResponse);
 
         } catch (TwoFactorRequiredException e) {
-        Duration duration = Duration.ofMinutes(authProperties.getCookiesDurations().getTwofaShortMin());
-        jwtCookieUtil.setTempTokenCookie(response, e.getTempToken(), duration);
+            Duration duration = Duration.ofMinutes(authProperties.getCookiesDurations().getTwofaShortMin());
+            jwtCookieUtil.setTempTokenCookie(response, e.getTempToken(), duration);
 
-        return ResponseEntity.status(206).body(Map.of(
-                "2fa_required", true,
-                "message", e.getMessage()
-        ));
-    }
+            return ResponseEntity.status(206).body(Map.of(
+                    "2fa_required", true,
+                    "message", e.getMessage()
+            ));
+        }
     }
 
     @Operation(
             summary = "Finalizar sessão do usuário",
-            description = "Revoga o token de acesso, remove cookies HttpOnly e encerra a sessão do usuário atual."
+            description = """
+            Revoga o token de acesso (se presente), remove cookies HttpOnly e encerra a sessão do usuário atual.
+            Esta operação é segura mesmo que não haja tokens nos cookies — útil para forçar logout em qualquer situação.
+        """
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Logout realizado com sucesso",
-                    content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"success\": true, \"message\": \"Logged out successfully. Token revoked.\"}"))),
-            @ApiResponse(responseCode = "400", description = "Token não encontrado no cookie",
-                    content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"success\": false, \"error\": \"No token provided.\"}"))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(example = """
+                {
+                  "success": true,
+                  "message": "Logout process executed. Tokens cleared if present."
+                }
+        """))),
             @ApiResponse(responseCode = "500", description = "Erro interno ao encerrar sessão",
-                    content = @Content(mediaType = "application/json"))
+                    content = @Content(mediaType = "application/json", schema = @Schema(example = """
+                {
+                  "success": false,
+                  "error": "Erro inesperado ao encerrar a sessão."
+                }
+        """)))
     })
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal User user,
                                     HttpServletRequest request,
                                     HttpServletResponse response) {
-        String token = jwtCookieUtil.extractTokenFromCookie(request);
-        if (token == null) {
-            return ResponseEntity.badRequest().body(Map.of(
+        try {
+            authService.logout(user, request, response);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Logout process executed. Tokens cleared if present."
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Erro inesperado ao encerrar sessão: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "No token provided."
+                    "error", "Erro inesperado ao encerrar a sessão."
             ));
         }
-
-        authService.logout(user, token, request, response);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Logged out successfully. Token revoked."
-        ));
     }
 
-
+    @Deprecated
     @Operation(
             summary = "Renovar token de acesso",
             description = "Utiliza o refresh token do cookie HttpOnly para gerar um novo access token. Retorna status da renovação da sessão."
@@ -177,30 +194,36 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            authService.refreshToken(request, response);
 
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Token renovado com sucesso."
-            ));
+        log.warn("⚠️ Endpoint /api/auth/validate está obsoleto. Use /api/auth/session.");
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Map.of("valid", false, "error", "Este endpoint foi descontinuado. Use /api/auth/session."));
 
-        } catch (MissingTokenException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("success", false, "error", e.getMessage()));
-
-        } catch (RefreshTokenExpiredException | InvalidTokenException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "error", e.getMessage()));
-
-        } catch (Exception e) {
-            log.error("Erro interno ao renovar token: {}", e.getMessage(), e);
-            authService.clearAuthCookies(response);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("success", false, "error", "Erro interno ao renovar o token."));
-        }
+//        try {
+//            authService.refreshToken(request, response);
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "success", true,
+//                    "message", "Token renovado com sucesso."
+//            ));
+//
+//        } catch (MissingTokenException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(Map.of("success", false, "error", e.getMessage()));
+//
+//        } catch (RefreshTokenExpiredException | InvalidTokenException e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("success", false, "error", e.getMessage()));
+//
+//        } catch (Exception e) {
+//            log.error("Erro interno ao renovar token: {}", e.getMessage(), e);
+//            authService.clearAuthCookies(response);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("success", false, "error", "Erro interno ao renovar o token."));
+//        }
     }
 
+    @Deprecated
     @Operation(
             summary = "Validar token de acesso",
             description = "Valida o token de acesso presente no cookie HttpOnly. Retorna os dados básicos do usuário se válido."
@@ -239,83 +262,85 @@ public class AuthController {
     })
     @GetMapping("/validate")
     public ResponseEntity<?> validate(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            Map<String, Object> result = authService.validateAccessToken(request, response);
-            return ResponseEntity.ok(result);
+        log.warn("⚠️ Endpoint /api/auth/validate está obsoleto. Use /api/auth/session.");
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Map.of("valid", false, "error", "Este endpoint foi descontinuado. Use /api/auth/session."));
 
-        } catch (MissingTokenException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("valid", false, "error", e.getMessage()));
-
-        } catch (InvalidTokenException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("valid", false, "error", e.getMessage()));
-
-        } catch (Exception e) {
-            log.error("Erro interno ao validar token: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("valid", false, "error", "Erro interno ao validar token."));
-        }
+//        try {
+//            Map<String, Object> result = authService.validateAccessToken(request, response);
+//            return ResponseEntity.ok(result);
+//
+//        } catch (MissingTokenException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(Map.of("valid", false, "error", e.getMessage()));
+//
+//        } catch (InvalidTokenException e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("valid", false, "error", e.getMessage()));
+//
+//        } catch (Exception e) {
+//            log.error("Erro interno ao validar token: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("valid", false, "error", "Erro interno ao validar token."));
+//        }
     }
 
 
     @Operation(
-            summary = "Validar ou renovar sessão",
-            description = "Valida o token de acesso presente no cookie. Se estiver expirado, tenta usar o refresh token para renovar a sessão. Retorna dados básicos do usuário."
+            summary = "Validar ou renovar sessão do usuário",
+            description = """
+        Endpoint unificado para validação e renovação da sessão.
+        - Se o access token ainda for válido, mantém a sessão ativa.
+        - Se expirado, tenta automaticamente renovar com o refresh token.
+        - Se falhar, limpa os cookies e exige novo login.
+    """
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sessão válida ou renovada com sucesso",
+            @ApiResponse(responseCode = "204", description = "Sessão válida ou renovada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Sessão inválida ou expirada",
                     content = @Content(mediaType = "application/json", schema = @Schema(example = """
-            {
-              "valid": true,
-              "userId": "abc-123",
-              "email": "rafael@empresa.com",
-              "role": "ADMIN"
-            }
-        """))),
-            @ApiResponse(responseCode = "400", description = "Token ausente",
+        {
+          "valid": false,
+          "error": "Sessão inválida. Faça login novamente."
+        }
+    """))),
+            @ApiResponse(responseCode = "500", description = "Erro interno na validação ou renovação",
                     content = @Content(mediaType = "application/json", schema = @Schema(example = """
-            {
-              "valid": false,
-              "error": "Token não encontrado no cookie."
-            }
-        """))),
-            @ApiResponse(responseCode = "401", description = "Tokens inválidos ou expirados",
-                    content = @Content(mediaType = "application/json", schema = @Schema(example = """
-            {
-              "valid": false,
-              "error": "Sessão inválida. Faça login novamente."
-            }
-        """))),
-            @ApiResponse(responseCode = "500", description = "Erro interno ao renovar ou validar sessão",
-                    content = @Content(mediaType = "application/json", schema = @Schema(example = """
-            {
-              "valid": false,
-              "error": "Erro interno ao validar ou renovar a sessão."
-            }
-        """)))
+        {
+          "valid": false,
+          "error": "Erro interno ao validar ou renovar a sessão."
+        }
+    """)))
     })
     @GetMapping("/session")
     public ResponseEntity<?> validateOrRefreshSession(HttpServletRequest request, HttpServletResponse response) {
+
+        log.info("🍪 Cookies recebidos:");
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                log.info("→ {} = {}", c.getName(), c.getValue());
+            }
+        } else {
+            log.warn("⚠️ Nenhum cookie encontrado na requisição.");
+        }
+
         try {
-            Map<String, Object> result = authService.validateOrRefreshSession(request, response);
-            return ResponseEntity.ok(result);
+            authService.validateOrRefreshSession(request, response);
+            return ResponseEntity.noContent().build(); // 204 No Content
 
         } catch (MissingTokenException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("valid", false, "error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("valid", false, "error", e.getMessage()));
 
         } catch (InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "error", e.getMessage()));
 
         } catch (Exception e) {
-            log.error("Erro interno ao validar/renovar sessão: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            log.error("❌ Erro interno ao validar/renovar sessão: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
                     .body(Map.of("valid", false, "error", "Erro interno ao validar ou renovar a sessão."));
         }
     }
-
 
     @Operation(
             summary = "Obter dados do usuário autenticado",
@@ -330,11 +355,24 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
         try {
-            UserProfileDTO profile = authService.getCurrentUserProfile(user);
+            UserProfileDTO profile = userService.getCurrentUserProfile(user);
             return ResponseEntity.ok(Map.of("success", true, "data", profile));
         } catch (InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
+
+    @Operation(summary = "Registro de novo usuário", description = "Cria um novo usuário com validações de email, username, senha e papéis.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou usuário já existente"),
+            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+    })
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest request) {
+        userService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
 }
