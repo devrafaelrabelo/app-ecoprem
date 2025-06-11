@@ -1,11 +1,14 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.config.MailProperties;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import jakarta.mail.MessagingException;
 
 @Slf4j
 @Service
@@ -15,9 +18,6 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final MailProperties mailProperties;
 
-    /**
-     * Envia e-mail de notificação de conta bloqueada por excesso de tentativas de login.
-     */
     public void sendAccountLockedEmail(String to, String username) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailProperties.getUsername());
@@ -34,6 +34,36 @@ public class MailService {
             log.info("📧 E-mail de bloqueio enviado para {}", to);
         } catch (Exception e) {
             log.error("❌ Falha ao enviar e-mail de bloqueio para {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    public void sendPasswordResetEmail(String to, String token) {
+        String subject = "🔐 Redefinição de senha - EcoPrem";
+        String resetUrl = "https://app.bemprotege.com.br/reset-password?token=" + token;
+
+        String body = """
+        Olá,
+
+        Recebemos uma solicitação para redefinir sua senha. Para continuar, acesse o link abaixo:
+        %s
+
+        Se você não solicitou esta ação, ignore este e-mail.
+
+        Atenciosamente,
+        Equipe EcoPrem
+        """.formatted(resetUrl);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailProperties.getUsername());
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+
+        try {
+            mailSender.send(message);
+            log.info("📧 E-mail de redefinição de senha enviado para {}", to);
+        } catch (Exception e) {
+            log.error("❌ Falha ao enviar e-mail de redefinição para {}: {}", to, e.getMessage(), e);
         }
     }
 }

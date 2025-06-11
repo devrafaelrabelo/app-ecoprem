@@ -1,5 +1,6 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.cache.AuthCacheRegistry;
 import com.ecoprem.auth.dto.BackupCodeResponse;
 import com.ecoprem.auth.dto.LoginWithRefreshResponse;
 import com.ecoprem.auth.dto.TwoFactorLoginRequest;
@@ -19,9 +20,9 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base32;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -36,17 +37,18 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TwoFactorAuthService {
 
-    @Autowired
-    private Cache<UUID, Integer> twoFactorAttemptsPerUser;
     private static final int MAX_2FA_ATTEMPTS = 2;
-    @Autowired private UserRepository userRepository;
-    @Autowired private Pending2FALoginRepository pending2FALoginRepository;
-    @Autowired private BackupCodeService backupCodeService;
-    @Autowired private AuthService authService;
-    @Autowired private JwtCookieUtil jwtCookieUtil;
-    @Autowired private LoginFinalizerService loginFinalizerService;
+
+    private final AuthCacheRegistry cacheRegistry;
+    private final UserRepository userRepository;
+    private final Pending2FALoginRepository pending2FALoginRepository;
+    private final BackupCodeService backupCodeService;
+    private final AuthService authService;
+    private final JwtCookieUtil jwtCookieUtil;
+    private final LoginFinalizerService loginFinalizerService;
 
     public String generateSecret() {
         byte[] buffer = new byte[20];
@@ -91,7 +93,6 @@ public class TwoFactorAuthService {
                     | (hash[offset + 3] & 0xFF);
 
             String generatedCode = String.format("%06d", binary % 1_000_000);
-
             return generatedCode.equals(code);
 
         } catch (Exception e) {
@@ -144,17 +145,17 @@ public class TwoFactorAuthService {
                 .orElseThrow(() -> new Invalid2FATokenException("Token 2FA não encontrado no cookie."));
 
         Pending2FALogin pending = pending2FALoginRepository.findByTempToken(tempToken)
-                .orElseThrow(() -> new Invalid2FATokenException("Invalid or expired 2FA token."));
+                .orElseThrow(() -> new Invalid2FATokenException("Token 2FA inválido ou expirado."));
 
         try {
             if (pending.getExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new Expired2FATokenException("The 2FA token has expired. Please login novamente.");
+                throw new Expired2FATokenException("O token 2FA expirou. Faça login novamente.");
             }
 
             User user = pending.getUser();
+            Cache<UUID, Integer> attemptsCache = cacheRegistry.getTwoFactorAttemptsPerUser();
 
-            // 👇 Verifica tentativas
-            int attempts = twoFactorAttemptsPerUser.get(user.getId(), id -> 0);
+            int attempts = attemptsCache.get(user.getId(), id -> 0);
             if (attempts >= MAX_2FA_ATTEMPTS) {
                 throw new Invalid2FACodeException("Muitas tentativas incorretas. Tente novamente mais tarde.");
             }
@@ -163,12 +164,12 @@ public class TwoFactorAuthService {
             boolean validBackup = backupCodeService.validateBackupCode(user, request.getTwoFactorCode());
 
             if (!validTotp && !validBackup) {
-                twoFactorAttemptsPerUser.put(user.getId(), attempts + 1);
+                attemptsCache.put(user.getId(), attempts + 1);
                 throw new Invalid2FACodeException("O código 2FA está incorreto.");
             }
 
-            // 👇 Sucesso: limpa tentativas
-            twoFactorAttemptsPerUser.invalidate(user.getId());
+            // Sucesso: limpa tentativas
+            attemptsCache.invalidate(user.getId());
 
             return loginFinalizerService.finalizeLogin(user, request.isRememberMe(), httpRequest, response);
 
@@ -177,7 +178,6 @@ public class TwoFactorAuthService {
             jwtCookieUtil.clearTempTokenCookie(response);
         }
     }
-
 
     public List<BackupCodeResponse> listBackupCodes(User user) {
         return backupCodeService.getBackupCodes(user).stream()

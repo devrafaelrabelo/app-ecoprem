@@ -5,6 +5,7 @@ import com.ecoprem.entity.common.Department;
 import com.ecoprem.entity.security.Role;
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,9 @@ public class User {
 
     @Column(name = "account_locked")
     private boolean accountLocked;
+
+    @Column(name = "account_locked_at")
+    private LocalDateTime accountLockedAt;
 
     @Column(name = "account_deletion_requested")
     private boolean accountDeletionRequested;
@@ -117,10 +121,8 @@ public class User {
     @Column(name = "two_factor_enabled")
     private boolean twoFactorEnabled;
 
-    @Column(name = "account_locked_at")
-    private LocalDateTime accountLockedAt;
-
     // RELACIONAMENTOS
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",

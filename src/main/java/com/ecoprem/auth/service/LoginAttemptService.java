@@ -1,5 +1,6 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.cache.AuthCacheRegistry;
 import com.ecoprem.auth.exception.AccountLockedException;
 import com.ecoprem.auth.exception.RateLimitExceededException;
 import com.ecoprem.auth.repository.UserRepository;
@@ -8,6 +9,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -20,27 +22,26 @@ public class LoginAttemptService {
     private static final int MAX_USER_LOGIN_ATTEMPTS = 5;
     private static final int MAX_REFRESH_ATTEMPTS_PER_MINUTE = 10;
 
-    private final Cache<String, Integer> refreshAttemptsPerIp;
-    private final Cache<String, Integer> loginAttemptsPerIp;
-    private final Cache<String, Integer> loginAttemptsPerEmail;
+    private final AuthCacheRegistry cacheRegistry;
     private final UserRepository userRepository;
     private final MailService mailService;
 
     public void checkRateLimits(String ipAddress, String email) {
-        int ipAttempts = incrementAndGet(loginAttemptsPerIp, ipAddress);
+        int ipAttempts = incrementAndGet(cacheRegistry.getLoginAttemptsPerIp(), ipAddress);
         if (ipAttempts > MAX_ATTEMPTS_PER_MINUTE_IP) {
             throw new RateLimitExceededException("Muitas tentativas de login a partir deste IP. Tente novamente mais tarde.");
         }
 
-        int emailAttempts = incrementAndGet(loginAttemptsPerEmail, email);
+        int emailAttempts = incrementAndGet(cacheRegistry.getLoginAttemptsPerEmail(), email);
         if (emailAttempts > MAX_ATTEMPTS_PER_MINUTE_EMAIL) {
             throw new RateLimitExceededException("Muitas tentativas de login para esta conta. Tente novamente mais tarde.");
         }
     }
 
     public void checkRefreshRateLimit(String ipAddress) {
-        int attempts = refreshAttemptsPerIp.get(ipAddress, k -> 0) + 1;
-        refreshAttemptsPerIp.put(ipAddress, attempts);
+        Cache<String, Integer> refreshCache = cacheRegistry.getRefreshAttemptsPerIp();
+        int attempts = refreshCache.get(ipAddress, k -> 0) + 1;
+        refreshCache.put(ipAddress, attempts);
 
         if (attempts > MAX_REFRESH_ATTEMPTS_PER_MINUTE) {
             throw new RateLimitExceededException("Muitas tentativas de refresh. Tente novamente em instantes.");
