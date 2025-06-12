@@ -1,2 +1,0 @@
-ALTER TABLE users
-ADD COLUMN account_locked_at TIMESTAMP NULL;

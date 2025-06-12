@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS idx_active_session_session_id ON active_session(session_id);
