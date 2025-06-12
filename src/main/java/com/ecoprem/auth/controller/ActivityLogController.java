@@ -1,7 +1,7 @@
 package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.ActivityLogResponse;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

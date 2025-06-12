@@ -1,4 +1,4 @@
-package com.ecoprem.entity.auth;
+package com.ecoprem.entity.user;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -24,6 +24,6 @@ public class UserGroup {
     @JoinColumn(name = "created_by")
     private User createdBy;
 
-    @ManyToMany(mappedBy = "userGroups", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(mappedBy = "userGroups")
     private List<User> users = new ArrayList<>();
 }

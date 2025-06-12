@@ -2,12 +2,12 @@ package com.ecoprem.admin.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
 import com.ecoprem.entity.security.Role;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.exception.EmailAlreadyExistsException;
 import com.ecoprem.auth.exception.RoleNotFoundException;
 import com.ecoprem.auth.exception.UsernameAlreadyExistsException;
 import com.ecoprem.auth.repository.RoleRepository;
-import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.auth.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
@@ -83,7 +84,7 @@ public class AdminUserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(roles); // ← agora usando lista
+        user.setRoles((Set<Role>) roles); // ← agora usando lista
         user.setEmailVerified(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

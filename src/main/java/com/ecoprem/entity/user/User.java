@@ -1,15 +1,17 @@
-package com.ecoprem.entity.auth;
+package com.ecoprem.entity.user;
 
-import com.ecoprem.entity.security.AccessLevel;
+import com.ecoprem.entity.auth.Function;
+import com.ecoprem.entity.auth.Position;
 import com.ecoprem.entity.common.Department;
 import com.ecoprem.entity.security.Role;
+import com.ecoprem.entity.security.UserPermission;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -36,6 +38,12 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(name = "cpf", length = 14, unique = true, nullable = false)
+    private String cpf;
+
+    @Column(name = "birth_date", nullable = false)
+    private LocalDate birthDate;
 
     @Column(name = "email_verified")
     private boolean emailVerified;
@@ -123,17 +131,14 @@ public class User {
 
     // RELACIONAMENTOS
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private List<Role> roles = new ArrayList<>();
-
-    @ManyToOne
-    @JoinColumn(name = "access_level_id")
-    private AccessLevel accessLevel;
+    private Set<Role> roles = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
@@ -145,7 +150,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "department_id")
     )
-    private List<Department> departments = new ArrayList<>();
+    private Set<Department> departments = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -153,5 +158,31 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "user_group_id")
     )
-    private List<UserGroup> userGroups = new ArrayList<>();
+    private Set<UserGroup> userGroups = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name = "position_id")
+    private Position position;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_function",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "function_id")
+    )
+    private Set<Function> functions = new HashSet<>();
+
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserPermission> userPermissions = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", fullName='" + fullName + '\'' +
+                '}';
+    }
 }

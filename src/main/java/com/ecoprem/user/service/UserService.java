@@ -1,14 +1,19 @@
-package com.ecoprem.auth.service;
+package com.ecoprem.user.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
 import com.ecoprem.auth.dto.SessionUserResponse;
+import com.ecoprem.auth.dto.UserBasicDTO;
 import com.ecoprem.auth.dto.UserProfileDTO;
 import com.ecoprem.auth.exception.*;
+import com.ecoprem.auth.mapper.UserMapper;
 import com.ecoprem.auth.repository.*;
-import com.ecoprem.entity.auth.*;
+import com.ecoprem.auth.service.ActiveSessionService;
 import com.ecoprem.entity.common.Department;
-import com.ecoprem.entity.security.AccessLevel;
 import com.ecoprem.entity.security.Role;
+import com.ecoprem.entity.user.User;
+import com.ecoprem.entity.user.UserGroup;
+import com.ecoprem.entity.user.UserStatus;
+import com.ecoprem.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,9 +32,9 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
     private final UserGroupRepository userGroupRepository;
-    private final AccessLevelRepository accessLevelRepository;
     private final ActiveSessionService activeSessionService;
     private final PasswordEncoder passwordEncoder;
+    private UserMapper userMapper;
 
     public void register(RegisterRequest request) {
         validateEmailAndUsernameUniqueness(request);
@@ -40,16 +45,14 @@ public class UserService {
                 .stream().map(UUID::fromString).toList());
         List<UserGroup> userGroups = resolveUserGroups(request.getUserGroups()
                 .stream().map(UUID::fromString).toList());
-        AccessLevel accessLevel = resolveAccessLevel(
-                request.getAccessLevelId() != null ? UUID.fromString(request.getAccessLevelId()) : null
-        );
 
-        User newUser = buildNewUser(request, roles, departments, userGroups, accessLevel);
+
+        User newUser = buildNewUser(request, roles, departments, userGroups);
         userRepository.save(newUser);
     }
 
     private User buildNewUser(RegisterRequest request, List<Role> roles, List<Department> departments,
-                              List<UserGroup> userGroups, AccessLevel accessLevel) {
+                              List<UserGroup> userGroups) {
 
         User user = new User();
         user.setId(UUID.randomUUID());
@@ -65,11 +68,9 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(roles);
-        user.setDepartments(departments);
-        user.setUserGroups(userGroups);
-        user.setAccessLevel(accessLevel);
-
+        user.setRoles((Set<Role>) roles);
+        user.setDepartments((Set<Department>) departments);
+        user.setUserGroups((Set<UserGroup>) userGroups);
         user.setEmailVerified(false);
         user.setFirstLogin(true);
         user.setNotificationsEnabled(true);
@@ -117,12 +118,6 @@ public class UserService {
         return userGroupRepository.findAllById(groupIds);
     }
 
-    private AccessLevel resolveAccessLevel(UUID accessLevelId) {
-        if (accessLevelId == null) return null;
-        return accessLevelRepository.findById(accessLevelId)
-                .orElseThrow(() -> new InvalidRequestException("Nível de acesso inválido."));
-    }
-
     public UserProfileDTO getCurrentUserProfile(User user) {
         if (user == null) {
             throw new InvalidTokenException("Usuário não autenticado.");
@@ -133,9 +128,14 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
-                .roles(user.getRoles().stream().map(Role::getName).toList())
                 .twoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
+    }
+
+    public UserBasicDTO getCurrentUserBasic(User user) {
+        User fullUser = userRepository.findDetailedById(user.getId())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+        return userMapper.toBasicDTO(fullUser);
     }
 
     public SessionUserResponse toSessionUserResponse(User user) {
@@ -154,7 +154,7 @@ public class UserService {
         }
 
         String status = Optional.ofNullable(user.getStatus())
-                .map(UserStatus::getStatus)
+                .map(UserStatus::getName)
                 .map(String::toLowerCase)
                 .orElse(null);
 

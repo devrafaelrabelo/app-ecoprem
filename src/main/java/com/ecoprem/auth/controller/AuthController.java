@@ -4,12 +4,10 @@ import com.ecoprem.auth.config.AuthPathProperties;
 import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.*;
 import com.ecoprem.auth.service.LoginFinalizerService;
-import com.ecoprem.auth.service.TokenService;
-import com.ecoprem.auth.service.UserService;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.user.service.UserService;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.auth.util.JwtCookieUtil;
-import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -339,27 +336,6 @@ public class AuthController {
             log.error("❌ Erro interno ao validar/renovar sessão: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("valid", false, "error", "Erro interno ao validar ou renovar a sessão."));
-        }
-    }
-
-    @Operation(
-            summary = "Obter dados do usuário autenticado",
-            description = "Retorna os dados do usuário autenticado com base no token de sessão."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuário autenticado com sucesso",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserProfileDTO.class))),
-            @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
-                    content = @Content(mediaType = "application/json"))
-    })
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
-        try {
-            UserProfileDTO profile = userService.getCurrentUserProfile(user);
-            return ResponseEntity.ok(Map.of("success", true, "data", profile));
-        } catch (InvalidTokenException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
 

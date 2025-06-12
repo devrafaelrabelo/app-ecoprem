@@ -1,4 +1,4 @@
-package com.ecoprem.entity.auth;
+package com.ecoprem.entity.user;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -13,8 +13,8 @@ public class UserStatus {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false, length = 50)
-    private String status;
+    @Column(name = "name",unique = true, nullable = false, length = 50)
+    private String name;
 
     private String description;
 

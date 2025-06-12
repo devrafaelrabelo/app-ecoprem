@@ -2,7 +2,7 @@ package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.repository.RefreshTokenRepository;
 import com.ecoprem.entity.auth.RefreshToken;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

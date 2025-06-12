@@ -1,10 +1,11 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.dto.LoginRequest;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
+import com.ecoprem.user.repository.UserRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;

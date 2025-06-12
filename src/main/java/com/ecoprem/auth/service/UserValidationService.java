@@ -1,9 +1,9 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.exception.*;
-import com.ecoprem.auth.repository.UserRepository;
-import com.ecoprem.entity.auth.User;
-import com.ecoprem.entity.auth.UserStatus;
+import com.ecoprem.user.repository.UserRepository;
+import com.ecoprem.entity.user.User;
+import com.ecoprem.entity.user.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +22,7 @@ public class UserValidationService {
         }
 
         String status = Optional.ofNullable(user.getStatus())
-                .map(UserStatus::getStatus)
+                .map(UserStatus::getName)
                 .map(String::toLowerCase)
                 .orElse(null);
 

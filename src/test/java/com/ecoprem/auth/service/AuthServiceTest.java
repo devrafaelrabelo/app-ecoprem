@@ -8,7 +8,7 @@
 //import com.ecoprem.auth.repository.LoginHistoryRepository;
 //import com.ecoprem.auth.repository.Pending2FALoginRepository;
 //import com.ecoprem.auth.repository.RoleRepository;
-//import com.ecoprem.auth.repository.UserRepository;
+//import com.ecoprem.user.repository.UserRepository;
 //import com.ecoprem.auth.security.JwtTokenProvider;
 //import com.ecoprem.auth.util.LoginMetadataExtractor;
 //import com.github.benmanes.caffeine.cache.Cache;
@@ -262,7 +262,7 @@ package com.ecoprem.auth.service;
 import com.ecoprem.auth.dto.LoginRequest;
 import com.ecoprem.auth.dto.LoginResult;
 import com.ecoprem.entity.security.Role;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.exception.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -290,7 +290,7 @@ class AuthServiceLoginTests extends AuthServiceTestBase {
         User user = createVerifiedUser();
         user.setPassword("encoded-password");
         role.setName("USER");
-        user.setRoles(List.of(role));
+        user.setRoles((java.util.Set<Role>) List.of(role));
 
         LoginRequest request = createLoginRequest();
         request.setPassword("raw-password");

@@ -1,7 +1,7 @@
 package com.ecoprem.auth.repository;
 
 import com.ecoprem.entity.auth.BackupCode;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

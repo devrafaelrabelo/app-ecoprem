@@ -1,5 +1,6 @@
 package com.ecoprem.entity.auth;
 
+import com.ecoprem.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.UUID;

@@ -1,12 +1,12 @@
 package com.ecoprem.auth.security;
 
 import com.ecoprem.auth.exception.AuthenticationException;
-import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.auth.service.ActiveSessionService;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import com.ecoprem.core.audit.service.SecurityAuditService;
 import com.ecoprem.entity.auth.ActiveSession;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

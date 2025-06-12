@@ -3,12 +3,7 @@ package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.*;
 
-import com.ecoprem.entity.auth.BackupCode;
-import com.ecoprem.entity.auth.Pending2FALogin;
-import com.ecoprem.entity.auth.User;
-import com.ecoprem.auth.exception.Expired2FATokenException;
-import com.ecoprem.auth.exception.Invalid2FACodeException;
-import com.ecoprem.auth.exception.Invalid2FATokenException;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.repository.Pending2FALoginRepository;
 import com.ecoprem.auth.service.AuthService;
 import com.ecoprem.auth.service.BackupCodeService;
@@ -31,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 

@@ -2,11 +2,11 @@ package com.ecoprem.auth.controller;
 
 import com.ecoprem.auth.dto.ForgotPasswordRequest;
 import com.ecoprem.auth.dto.ResetPasswordRequest;
-import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.auth.service.MailService;
 import com.ecoprem.auth.service.PasswordResetService;
 import com.ecoprem.auth.service.RateLimiterService;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

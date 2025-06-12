@@ -1,6 +1,6 @@
 package com.ecoprem.entity.common;
 
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
 

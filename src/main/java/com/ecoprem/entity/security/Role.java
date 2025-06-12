@@ -1,12 +1,11 @@
 package com.ecoprem.entity.security;
 
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "role")
@@ -24,6 +23,16 @@ public class Role {
     @Column(name = "is_system_role")
     private boolean systemRole;
 
+    @ToString.Exclude
     @ManyToMany(mappedBy = "roles")
     private List<User> users = new ArrayList<>();
+
+    @ToString.Exclude
+    @ManyToMany
+    @JoinTable(
+            name = "role_permission",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<Permission> permissions = new HashSet<>();
 }

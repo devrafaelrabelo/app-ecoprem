@@ -1,5 +1,6 @@
 package com.ecoprem.entity.auth;
 
+import com.ecoprem.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -36,6 +37,6 @@ public class ActiveSession {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
-    @Column(name = "lastAccess_at")
+    @Column(name = "last_access_at")
     private LocalDateTime lastAccessAt;
 }

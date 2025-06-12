@@ -1,9 +1,9 @@
 package com.ecoprem.auth.service;
 
 import com.ecoprem.auth.repository.PasswordResetTokenRepository;
-import com.ecoprem.auth.repository.UserRepository;
+import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.entity.auth.PasswordResetToken;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

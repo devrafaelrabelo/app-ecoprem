@@ -1,7 +1,7 @@
 package com.ecoprem.admin.controller;
 
 import com.ecoprem.auth.dto.RegisterRequest;
-import com.ecoprem.entity.auth.User;
+import com.ecoprem.entity.user.User;
 import com.ecoprem.admin.service.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
