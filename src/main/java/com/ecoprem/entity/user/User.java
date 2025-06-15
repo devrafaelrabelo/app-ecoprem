@@ -2,7 +2,11 @@ package com.ecoprem.entity.user;
 
 import com.ecoprem.entity.auth.Function;
 import com.ecoprem.entity.auth.Position;
+import com.ecoprem.entity.common.AllocationHistory;
 import com.ecoprem.entity.common.Department;
+import com.ecoprem.entity.communication.CorporatePhone;
+import com.ecoprem.entity.communication.InternalExtension;
+import com.ecoprem.entity.communication.PersonalPhone;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.security.UserPermission;
 import jakarta.persistence.*;
@@ -172,9 +176,23 @@ public class User {
     )
     private Set<Function> functions = new HashSet<>();
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPermission> userPermissions = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "user_personal_phones", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "phone_number")
+    private List<String> personalPhoneNumbers;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AllocationHistory> allocationHistories = new HashSet<>();
+
+    @OneToMany(mappedBy = "currentUser")
+    private Set<InternalExtension> currentInternalExtensions = new HashSet<>();;
+
+    @OneToMany(mappedBy = "currentUser")
+    private Set<CorporatePhone> currentCorporatePhones = new HashSet<>();;
+
 
     @Override
     public String toString() {

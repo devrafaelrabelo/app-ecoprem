@@ -23,6 +23,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     """)
     Optional<User> findByEmailWithStatusAndRoles(@Param("email") String email);
     @EntityGraph(attributePaths = {
+            "roles", "departments", "userGroups", "position", "functions", "userPermissions.permission"
+    })
+    Optional<User> findByEmail(String email);
+
+    @EntityGraph(attributePaths = {
             "roles",
             "departments",
             "userGroups",
@@ -31,9 +36,31 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             "userPermissions.permission"
     })
     Optional<User> findDetailedById(UUID id);
-    @EntityGraph(attributePaths = {
-            "roles", "departments", "userGroups", "position", "functions", "userPermissions.permission"
-    })
-    Optional<User> findByEmail(String email);
 
+    @EntityGraph(attributePaths = {
+            "roles",
+            "departments",
+            "userGroups",
+            "position",
+            "functions",
+            "userPermissions.permission",
+            "currentCorporatePhones",
+            "currentInternalExtensions"
+    })
+    Optional<User> findWithContactDetailsById(UUID id);
+
+    @EntityGraph(attributePaths = {
+            "roles",
+            "departments",
+            "functions",
+            "position",
+            "status",
+            "currentCorporatePhones",
+            "currentInternalExtensions",
+            "allocationHistories.company",
+            "personalPhoneNumbers",
+            "status"
+    })
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    Optional<User> findByUsernameFetchAll(@Param("username") String username);
 }

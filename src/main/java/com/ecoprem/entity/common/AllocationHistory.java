@@ -1,0 +1,45 @@
+package com.ecoprem.entity.common;
+
+import com.ecoprem.entity.user.User;
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Data
+@Table(name = "allocation_history")
+public class AllocationHistory {
+
+    @Id
+    private UUID id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    @Column(name = "resource_type", nullable = false)
+    private String resourceType; // ex: "CORPORATE_PHONE", "EXTENSION", "EMPLOYMENT"
+
+    @Column(name = "resource_id", nullable = false)
+    private UUID resourceId;
+
+    @ManyToOne
+    @JoinColumn(name = "registered_by")
+    private User registeredBy;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+}

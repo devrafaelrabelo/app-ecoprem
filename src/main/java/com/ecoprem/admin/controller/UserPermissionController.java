@@ -1,4 +1,4 @@
-package com.ecoprem.auth.controller;
+package com.ecoprem.admin.controller;
 
 import com.ecoprem.auth.dto.UserPermissionDTO;
 import com.ecoprem.auth.service.UserPermissionService;

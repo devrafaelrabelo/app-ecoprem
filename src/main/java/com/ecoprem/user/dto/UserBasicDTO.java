@@ -1,4 +1,4 @@
-package com.ecoprem.auth.dto;
+package com.ecoprem.user.dto;
 
 import lombok.Builder;
 import lombok.Data;

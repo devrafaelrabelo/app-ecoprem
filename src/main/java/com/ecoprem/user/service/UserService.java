@@ -2,10 +2,9 @@ package com.ecoprem.user.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
 import com.ecoprem.auth.dto.SessionUserResponse;
-import com.ecoprem.auth.dto.UserBasicDTO;
+import com.ecoprem.user.dto.UserBasicDTO;
 import com.ecoprem.auth.dto.UserProfileDTO;
 import com.ecoprem.auth.exception.*;
-import com.ecoprem.auth.mapper.UserMapper;
 import com.ecoprem.auth.repository.*;
 import com.ecoprem.auth.service.ActiveSessionService;
 import com.ecoprem.entity.common.Department;
@@ -13,6 +12,8 @@ import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.entity.user.UserGroup;
 import com.ecoprem.entity.user.UserStatus;
+import com.ecoprem.user.dto.ProfileDTO;
+import com.ecoprem.user.mapper.UserMapper;
 import com.ecoprem.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -118,24 +119,16 @@ public class UserService {
         return userGroupRepository.findAllById(groupIds);
     }
 
-    public UserProfileDTO getCurrentUserProfile(User user) {
-        if (user == null) {
-            throw new InvalidTokenException("Usuário não autenticado.");
-        }
-
-        return UserProfileDTO.builder()
-                .userId(user.getId().toString())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .twoFactorEnabled(user.isTwoFactorEnabled())
-                .build();
-    }
-
     public UserBasicDTO getCurrentUserBasic(User user) {
         User fullUser = userRepository.findDetailedById(user.getId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
         return userMapper.toBasicDTO(fullUser);
+    }
+
+    public ProfileDTO getCurrentUserProfile(User user) {
+        User fullUser =  userRepository.findByUsernameFetchAll(user.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+        return userMapper.toProfileDto(fullUser);
     }
 
     public SessionUserResponse toSessionUserResponse(User user) {

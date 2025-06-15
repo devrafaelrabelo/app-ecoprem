@@ -1,8 +1,10 @@
 package com.ecoprem.user.controller;
 
-import com.ecoprem.auth.dto.UserBasicDTO;
+import com.ecoprem.user.dto.UserBasicDTO;
 import com.ecoprem.auth.dto.UserProfileDTO;
 import com.ecoprem.auth.exception.InvalidTokenException;
+import com.ecoprem.user.dto.ProfileDTO;
+import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.user.service.UserService;
 import com.ecoprem.entity.user.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -24,6 +27,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Operation(
             summary = "Obter dados do usuário autenticado",
@@ -41,6 +45,27 @@ public class UserController {
             UserBasicDTO profile = userService.getCurrentUserBasic(user);
             return ResponseEntity.ok(Map.of("success", true, "data", profile));
         } catch (InvalidTokenException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    @Operation(
+            summary = "Obter perfil completo do usuário autenticado",
+            description = "Retorna todas as informações de perfil do usuário autenticado, incluindo empresa, departamentos, ramais e recursos alocados."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Perfil retornado com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProfileDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal User user) {
+        try {
+            ProfileDTO dto = userService.getCurrentUserProfile(user);
+            return ResponseEntity.ok(Map.of("success", true, "data", dto));
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "error", e.getMessage()));
         }
