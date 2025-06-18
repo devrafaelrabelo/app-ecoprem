@@ -28,6 +28,7 @@ public class JwtTokenProvider {
     @Autowired
     private JwtProperties jwtProperties;
 
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret());
         return Keys.hmacShaKeyFor(keyBytes);

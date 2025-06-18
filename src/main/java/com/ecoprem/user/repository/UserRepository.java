@@ -63,4 +63,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     })
     @Query("SELECT u FROM User u WHERE u.username = :username")
     Optional<User> findByUsernameFetchAll(@Param("username") String username);
+
+    @EntityGraph(attributePaths = {"roles", "status"})
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    Optional<User> fetchUserWithRolesAndStatus(@Param("id") UUID id);
 }

@@ -2,6 +2,7 @@ package com.ecoprem.auth.repository;
 
 import com.ecoprem.entity.auth.RefreshToken;
 import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
@@ -16,5 +17,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     void deleteByUserIdAndSessionId(UUID userId, String sessionId);
     @Modifying
     void deleteByUserId(UUID userId);
+    Optional<RefreshToken> findByToken(String token);
+    @EntityGraph(attributePaths = {
+            "user", "user.roles", "user.status"
+    })
+    Optional<RefreshToken> findByTokenAndSessionId(String token, String sessionId);
 
 }

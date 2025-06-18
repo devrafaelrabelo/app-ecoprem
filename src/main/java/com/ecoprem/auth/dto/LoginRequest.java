@@ -2,8 +2,12 @@ package com.ecoprem.auth.dto;
 import jakarta.validation.constraints.*;
 import jakarta.validation.constraints.Email;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class LoginRequest {
 

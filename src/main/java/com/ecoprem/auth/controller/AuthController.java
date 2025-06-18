@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -311,19 +310,9 @@ public class AuthController {
     })
     @GetMapping("/session")
     public ResponseEntity<?> validateOrRefreshSession(HttpServletRequest request, HttpServletResponse response) {
-
-        log.info("🍪 Cookies recebidos:");
-        if (request.getCookies() != null) {
-            for (Cookie c : request.getCookies()) {
-                log.info("→ {} = {}", c.getName(), c.getValue());
-            }
-        } else {
-            log.warn("⚠️ Nenhum cookie encontrado na requisição.");
-        }
-
         try {
-            authService.validateOrRefreshSession(request, response);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            SessionUserResponse session = authService.validateOrRefreshSession(request, response);
+            return ResponseEntity.ok(Map.of("valid", true, "data", session)); // retorna dados atualizados
 
         } catch (MissingTokenException e) {
             return ResponseEntity.badRequest().body(Map.of("valid", false, "error", e.getMessage()));
@@ -333,9 +322,9 @@ public class AuthController {
                     .body(Map.of("valid", false, "error", e.getMessage()));
 
         } catch (Exception e) {
-            log.error("❌ Erro interno ao validar/renovar sessão: {}", e.getMessage(), e);
+            log.error("❌ Internal error validating/refreshing session: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("valid", false, "error", "Erro interno ao validar ou renovar a sessão."));
+                    .body(Map.of("valid", false, "error", "Internal server error during session validation."));
         }
     }
 

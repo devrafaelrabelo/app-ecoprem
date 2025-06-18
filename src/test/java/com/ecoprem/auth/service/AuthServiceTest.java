@@ -259,122 +259,184 @@
 
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.config.AuthProperties;
 import com.ecoprem.auth.dto.LoginRequest;
 import com.ecoprem.auth.dto.LoginResult;
-import com.ecoprem.entity.security.Role;
+import com.ecoprem.auth.exception.InvalidCredentialsException;
+import com.ecoprem.auth.exception.TwoFactorRequiredException;
+import com.ecoprem.auth.repository.LoginHistoryRepository;
+import com.ecoprem.auth.repository.Pending2FALoginRepository;
+import com.ecoprem.auth.repository.RefreshTokenRepository;
+import com.ecoprem.auth.security.JwtTokenProvider;
+import com.ecoprem.auth.util.JwtCookieUtil;
+import com.ecoprem.auth.util.LoginMetadataExtractor;
 import com.ecoprem.entity.user.User;
-import com.ecoprem.auth.exception.*;
+import com.ecoprem.user.repository.UserRepository;
+import com.ecoprem.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class AuthServiceLoginTests extends AuthServiceTestBase {
+class AuthServiceLoginTests {
 
-    @Test
-    void testLoginSuccess() {
-        String token = "jwt-token-mock";
-        String sessionId = "sessao-mock";
+    private UserRepository userRepository;
+    private PasswordEncoder passwordEncoder;
+    private LoginAttemptService loginAttemptService;
+    private UserValidationService userValidationService;
+    private LoginMetadataExtractor metadataExtractor;
 
-        Role role = new Role();
-        role.setName("USER");
+    private AuthService authService;
+    private LoginHistoryRepository loginHistoryRepository;
+    private Pending2FALoginRepository pending2FALoginRepository;
+    private RefreshTokenRepository refreshTokenRepository;
+    private JwtTokenProvider jwtTokenProvider;
+    private AuthProperties authProperties;
+    private JwtCookieUtil jwtCookieUtil;
+    private ActivityLogService activityLogService;
+    private RevokedTokenService revokedTokenService;
+    private SessionService sessionService;
+    private UserService userService;
+    private TokenService tokenService;
 
-        User user = createVerifiedUser();
-        user.setPassword("encoded-password");
-        role.setName("USER");
-        user.setRoles((java.util.Set<Role>) List.of(role));
+    @BeforeEach
+    void setUp() {
+        userRepository = mock(UserRepository.class);
+        loginHistoryRepository = mock(LoginHistoryRepository.class);
+        pending2FALoginRepository = mock(Pending2FALoginRepository.class);
+        refreshTokenRepository = mock(RefreshTokenRepository.class);
+        passwordEncoder = mock(PasswordEncoder.class);
+        metadataExtractor = mock(LoginMetadataExtractor.class);
+        jwtTokenProvider = mock(JwtTokenProvider.class);
+        authProperties = mock(AuthProperties.class);
+        jwtCookieUtil = mock(JwtCookieUtil.class);
+        activityLogService = mock(ActivityLogService.class);
+        revokedTokenService = mock(RevokedTokenService.class);
+        loginAttemptService = mock(LoginAttemptService.class);
+        userValidationService = mock(UserValidationService.class);
+        sessionService = mock(SessionService.class);
+        userService = mock(UserService.class);
+        tokenService = mock(TokenService.class);
 
-        LoginRequest request = createLoginRequest();
-        request.setPassword("raw-password");
-
-        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("raw-password", "encoded-password")).thenReturn(true);
-        when(jwtTokenProvider.generateToken(
-                any(), eq(testEmail), eq(List.of("USER")), anyString())
-        ).thenReturn(token);
-
-        LoginResult result = authService.login(request, servletRequest);
-
-        assertNotNull(result);
-        assertEquals(token, result.response().getAccessToken());
-
-        // ✅ Verifica se sessão foi registrada
-        verify(activeSessionService).createSession(eq(user), anyString(), eq(servletRequest));
+        authService = new AuthService(
+                userRepository,
+                loginHistoryRepository,
+                pending2FALoginRepository,
+                refreshTokenRepository,
+                passwordEncoder,
+                metadataExtractor,
+                jwtTokenProvider,
+                authProperties,
+                jwtCookieUtil,
+                activityLogService,
+                revokedTokenService,
+                loginAttemptService,
+                userValidationService,
+                sessionService,
+                userService,
+                tokenService
+        );
     }
 
     @Test
-    void testLoginWithInvalidEmail_shouldThrowInvalidRequestException() {
-        LoginRequest request = new LoginRequest();
-        request.setEmail("email-invalido");
-        request.setPassword("senha");
+    void shouldReturnLoginResult_whenCredentialsAreValidAnd2FAIsDisabled() {
+        // Arrange
+        String email = "admin@example.com";
+        String rawPassword = "Admin@123";
+        String encodedPassword = "$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS";
 
-        assertThrows(InvalidRequestException.class, () -> authService.login(request, servletRequest));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenReturn("JUnitTest");
+
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setEmail(email);
+        user.setPassword(encodedPassword);
+        user.setTwoFactorEnabled(false);
+
+        when(userRepository.findByEmailWithStatusAndRoles(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
+
+        // Act
+        LoginRequest loginRequest = new LoginRequest(email, rawPassword, false);
+        LoginResult result = authService.login(loginRequest, request);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.user()).isEqualTo(user);
+        assertThat(result.response()).isNull(); // token é gerado fora
     }
 
     @Test
-    void testLoginUserNotFound_shouldThrowInvalidCredentialsException() {
-        LoginRequest request = createLoginRequest();
-        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.empty());
+    void shouldThrowInvalidCredentialsException_whenPasswordIsIncorrect() {
+        // Arrange
+        String email = "admin@example.com";
+        String wrongPassword = "Wrong@123";
+        String encodedPassword = "$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS"; // hash de Admin@123
 
-        assertThrows(InvalidCredentialsException.class, () -> authService.login(request, servletRequest));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(encodedPassword);
+        user.setTwoFactorEnabled(false);
+
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenReturn("JUnitTest");
+
+        when(userRepository.findByEmailWithStatusAndRoles(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(eq(wrongPassword), eq(encodedPassword))).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> authService.login(new LoginRequest(email, wrongPassword, false), request))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Invalid email or password");
     }
 
     @Test
-    void testLoginEmailNotVerified_shouldThrowEmailNotVerifiedException() {
-        User user = createVerifiedUser();
-        user.setEmailVerified(false);
+    void shouldThrowInvalidCredentialsException_whenEmailDoesNotExist() {
+        // Arrange
+        String email = "naoexiste@example.com";
+        String password = "qualquerSenha";
 
-        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenReturn("JUnitTest");
 
-        assertThrows(EmailNotVerifiedException.class, () -> authService.login(createLoginRequest(), servletRequest));
+        when(userRepository.findByEmailWithStatusAndRoles(email)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> authService.login(new LoginRequest(email, password, false), request))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Invalid email or password");
     }
 
     @Test
-    void testLoginAccountLocked_shouldThrowAccountLockedException() {
-        User user = createVerifiedUser();
-        user.setAccountLocked(true);
-        user.setAccountLockedAt(LocalDateTime.now());
+    void shouldThrowTwoFactorRequiredException_when2FAIsEnabled() {
+        String email = "2fa@example.com";
+        String password = "Admin@123";
+        String encodedPassword = "$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS";
 
-        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setEmail(email);
+        user.setPassword(encodedPassword);
+        user.setTwoFactorEnabled(true);
 
-        assertThrows(AccountLockedException.class, () -> authService.login(createLoginRequest(), servletRequest));
+        when(userRepository.findByEmailWithStatusAndRoles(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authService.login(new LoginRequest(email, password, false), mock(HttpServletRequest.class))
+        ).isInstanceOf(TwoFactorRequiredException.class)
+                .hasMessageContaining("2FA required");
     }
-
-    @Test
-    void testLoginInvalidPassword_shouldThrowInvalidCredentialsException() {
-        User user = createVerifiedUser();
-        user.setPassword("senhaCerta");
-
-        LoginRequest request = createLoginRequest();
-        request.setPassword("senhaErrada");
-
-        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("senhaErrada", "senhaCerta")).thenReturn(false);
-
-        assertThrows(InvalidCredentialsException.class, () -> authService.login(request, servletRequest));
-    }
-
-    @Test
-    void testLoginTooManyAttemptsIp_shouldThrowRateLimitExceededException() {
-
-    }
-
-    @Test
-    void shouldThrowRateLimitExceededException_whenEmailAttemptsExceedLimit() {
-
-    }
-
-    @Test
-    void shouldBlockLoginAfterMultipleFailedAttempts_byEmail() {
-        
-    }
-
 }

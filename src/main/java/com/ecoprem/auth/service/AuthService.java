@@ -75,6 +75,7 @@ public class AuthService {
             if (!authenticated) {
                 failureReason = "Invalid password";
                 loginAttemptService.handleInvalidPassword(user);
+                throw new InvalidCredentialsException("Invalid email or password.");
             }
 
             loginAttemptService.resetLoginAttempts(user);
@@ -127,9 +128,10 @@ public class AuthService {
             loginAttemptService.checkRefreshRateLimit(ipAddress);
 
             RefreshToken oldToken = resolveValidRefreshToken(request);
-            User user = oldToken.getUser();
+            UUID userId = oldToken.getUser().getId(); // Só acessa o ID, que não é lazy
+            User user = userRepository.fetchUserWithRolesAndStatus(userId)
+                    .orElseThrow(() -> new InvalidTokenException("Usuário não encontrado ao renovar a sessão."));
 
-            refreshTokenRepository.deleteByUserId(user.getId());
 
             String sessionId = resolveSessionId(request);
             Duration duration = getRefreshDuration(oldToken);
@@ -154,12 +156,13 @@ public class AuthService {
             throw e;
 
         } catch (Exception e) {
+            log.error("❌ Erro inesperado ao renovar a sessão: {}", e.getMessage(), e);
             clearAuthCookies(response);
             throw new InvalidTokenException("Erro inesperado ao renovar a sessão.");
         }
     }
 
-    public void validateOrRefreshSession(HttpServletRequest request, HttpServletResponse response) {
+    public SessionUserResponse validateOrRefreshSession(HttpServletRequest request, HttpServletResponse response) {
         String accessToken = jwtCookieUtil.extractTokenFromCookie(request);
 
         if (accessToken != null) {
@@ -170,8 +173,7 @@ public class AuthService {
                     String email = claims.get("email", String.class);
                     User user = userRepository.findByEmailWithStatusAndRoles(email)
                             .orElseThrow(() -> new InvalidTokenException("Usuário não encontrado (validateOrRefreshSession)."));
-                    userService.toSessionUserResponse(user);
-                    return;
+                    return userService.toSessionUserResponse(user);
                 }
 
                 log.info("🔁 Token de acesso expirado. Tentando usar refresh...");
@@ -187,9 +189,10 @@ public class AuthService {
 
         try {
             LoginWithRefreshResponse refreshResponse = refreshToken(request, response);
+            System.out.println("🔁 Sessão renovada com sucesso: " + refreshResponse);
             User user = userRepository.findByUsername(refreshResponse.getUsername())
                     .orElseThrow(() -> new InvalidTokenException("Usuário não encontrado após refresh."));
-            userService.toSessionUserResponse(user);
+            return userService.toSessionUserResponse(user);
 
         } catch (Exception e) {
             log.warn("❌ Falha ao renovar sessão: {}", e.getMessage());
@@ -232,15 +235,15 @@ public class AuthService {
     }
 
     private RefreshToken resolveValidRefreshToken(HttpServletRequest request) {
+        String refreshTokenValue = jwtCookieUtil.extractRefreshTokenFromCookie(request);
         String sessionId = resolveSessionId(request);
-        UUID userId = resolveUserIdFromToken(request); // Você precisa implementar esse método, se ainda não tiver
 
-        if (userId == null || sessionId == null || sessionId.isBlank()) {
-            throw new InvalidTokenException("Informações da sessão ausentes ou inválidas.");
+        if (refreshTokenValue == null || sessionId == null || sessionId.isBlank()) {
+            throw new InvalidTokenException("Refresh token ou sessionId ausente.");
         }
 
         RefreshToken token = refreshTokenRepository
-                .findByUserIdAndSessionId(userId, sessionId)
+                .findByTokenAndSessionId(refreshTokenValue, sessionId)
                 .orElseThrow(() -> new RefreshTokenExpiredException("Refresh token não encontrado para esta sessão."));
 
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -252,13 +255,26 @@ public class AuthService {
     }
 
     private String resolveSessionId(HttpServletRequest request) {
-        try {
-            String token = jwtCookieUtil.extractTokenFromCookie(request);
-            Claims claims = jwtTokenProvider.extractClaims(token);
-            return claims.get("sessionId", String.class);
-        } catch (Exception e) {
-            return UUID.randomUUID().toString();
+        String accessToken = jwtCookieUtil.extractTokenFromCookie(request);
+        if (accessToken != null) {
+            try {
+                Claims claims = jwtTokenProvider.extractClaims(accessToken);
+                return claims.get("sessionId", String.class);
+            } catch (Exception e) {
+                log.warn("❌ Erro ao extrair sessionId do access token: {}", e.getMessage());
+            }
         }
+
+        // Se não houver access token válido, tenta usar o refresh token
+        String refreshToken = jwtCookieUtil.extractRefreshTokenFromCookie(request);
+        if (refreshToken != null) {
+            Optional<RefreshToken> token = refreshTokenRepository.findByToken(refreshToken);
+            if (token.isPresent()) {
+                return token.get().getSessionId();
+            }
+        }
+
+        throw new InvalidTokenException("Não foi possível determinar o sessionId.");
     }
 
     private UUID resolveUserIdFromToken(HttpServletRequest request) {
@@ -276,10 +292,22 @@ public class AuthService {
     }
 
     private Duration getRefreshDuration(RefreshToken oldToken) {
-        Duration existingDuration = Duration.between(oldToken.getCreatedAt(), oldToken.getExpiresAt());
-        return existingDuration.toHours() >= 24
-                ? Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshLongMin())
-                : Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+        try {
+            if (oldToken.getCreatedAt() == null || oldToken.getExpiresAt() == null) {
+                log.warn("⚠️ RefreshToken com datas nulas. Aplicando fallback padrão (short).");
+                return Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+            }
+
+            Duration existingDuration = Duration.between(oldToken.getCreatedAt(), oldToken.getExpiresAt());
+
+            return existingDuration.toHours() >= 24
+                    ? Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshLongMin())
+                    : Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+
+        } catch (Exception e) {
+            log.error("❌ Erro ao calcular duração do refresh token. Aplicando fallback padrão (short).", e);
+            return Duration.ofMinutes(authProperties.getCookiesDurations().getRefreshShortMin());
+        }
     }
 
     private String issueTokensAndSetCookies(User user, String sessionId,
@@ -302,16 +330,6 @@ public class AuthService {
     }
 
 
-
-    private String generateAccessToken(User user, String sessionId) {
-        return jwtTokenProvider.generateToken(
-                user.getId(),
-                user.getEmail(),
-                user.getRoles().stream().map(Role::getName).toList(),
-                sessionId
-        );
-    }
-
     private String extractAccessTokenOrThrow(HttpServletRequest request) {
         String token = jwtCookieUtil.extractTokenFromCookie(request);
         if (token == null || token.isBlank()) {
@@ -329,4 +347,6 @@ public class AuthService {
         response.put("expiresAt", claims.getExpiration()); // pode ser null
         return response;
     }
+
+
 }
