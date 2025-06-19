@@ -151,7 +151,7 @@ public class AuthService {
                     user.isTwoFactorEnabled()
             );
 
-        } catch (MissingTokenException | RefreshTokenExpiredException | RateLimitExceededException e) {
+        } catch (MissingTokenException | RefreshTokenExpiredException | RateLimitExceededException | InvalidTokenException e) {
             clearAuthCookies(response);
             throw e;
 
@@ -263,17 +263,21 @@ public class AuthService {
             } catch (Exception e) {
                 log.warn("❌ Erro ao extrair sessionId do access token: {}", e.getMessage());
             }
+        } else {
+            log.warn("⚠️ Access token não encontrado nos cookies.");
         }
 
-        // Se não houver access token válido, tenta usar o refresh token
         String refreshToken = jwtCookieUtil.extractRefreshTokenFromCookie(request);
         if (refreshToken != null) {
             Optional<RefreshToken> token = refreshTokenRepository.findByToken(refreshToken);
             if (token.isPresent()) {
                 return token.get().getSessionId();
+            } else {
+                log.warn("⚠️ Refresh token recebido, mas não encontrado no banco: {}", refreshToken);
             }
+        } else {
+            log.warn("⚠️ Refresh token não encontrado nos cookies.");
         }
-
         throw new InvalidTokenException("Não foi possível determinar o sessionId.");
     }
 

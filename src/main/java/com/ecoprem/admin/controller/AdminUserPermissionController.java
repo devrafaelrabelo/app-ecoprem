@@ -1,7 +1,7 @@
 package com.ecoprem.admin.controller;
 
 import com.ecoprem.auth.dto.UserPermissionDTO;
-import com.ecoprem.auth.service.UserPermissionService;
+import com.ecoprem.user.service.UserPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/user-permissions")
 @RequiredArgsConstructor
-public class UserPermissionController {
+public class AdminUserPermissionController {
 
     private final UserPermissionService userPermissionService;
 

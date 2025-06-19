@@ -22,6 +22,6 @@ public class ResourceType {
     @Column
     private String description;
 
-    @Column(name = "active")
-    private boolean active;
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 }

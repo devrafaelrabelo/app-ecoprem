@@ -32,8 +32,34 @@ public class ErrorDocumentationController {
                 Map.of("type", ErrorType.INVALID_2FA_TOKEN.getUri(), "title", ErrorType.INVALID_2FA_TOKEN.getTitle(), "status", 400),
                 Map.of("type", ErrorType.EXPIRED_2FA_TOKEN.getUri(), "title", ErrorType.EXPIRED_2FA_TOKEN.getTitle(), "status", 400),
                 Map.of("type", ErrorType.INVALID_2FA_CODE.getUri(), "title", ErrorType.INVALID_2FA_CODE.getTitle(), "status", 400),
+                Map.of("type", ErrorType.RESOURCE_NOT_FOUND.getUri(), "title", ErrorType.RESOURCE_NOT_FOUND.getTitle(), "status", 404),
                 Map.of("type", ErrorType.VALIDATION.getUri(), "title", ErrorType.VALIDATION.getTitle(), "status", 400),
-                Map.of("type", ErrorType.INVALID_BODY.getUri(), "title", ErrorType.INVALID_BODY.getTitle(), "status", 400)
+                Map.of("type", ErrorType.INVALID_BODY.getUri(), "title", ErrorType.INVALID_BODY.getTitle(), "status", 400),
+                Map.of("type", ErrorType.INVALID_TOKEN.getUri(), "title", ErrorType.INVALID_TOKEN.getTitle(), "status", 401),
+                Map.of("type", ErrorType.INVALID_RESOURCE_TYPE.getUri(),
+                        "title", ErrorType.INVALID_RESOURCE_TYPE.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_RESOURCE_STATUS.getUri(),
+                        "title", ErrorType.INVALID_RESOURCE_STATUS.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_COMPANY.getUri(),
+                        "title", ErrorType.INVALID_COMPANY.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_RESOURCE_TYPE.getUri(),
+                        "title", ErrorType.INVALID_RESOURCE_TYPE.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_USER.getUri(),
+                        "title", ErrorType.INVALID_USER.getTitle(),
+                        "status", 400
+                )
         );
     }
 }

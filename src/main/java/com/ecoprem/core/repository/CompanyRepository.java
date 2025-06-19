@@ -1,4 +1,4 @@
-package com.ecoprem.user.repository;
+package com.ecoprem.core.repository;
 
 import com.ecoprem.entity.common.Company;
 import com.ecoprem.entity.user.User;
@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface CompanyRepository  extends JpaRepository<Company, UUID> {
+public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     @Query("""
     SELECT u FROM User u
@@ -18,6 +18,4 @@ public interface CompanyRepository  extends JpaRepository<Company, UUID> {
     WHERE u.id = :id
 """)
     Optional<User> findWithAllocationHistoryById(@Param("id") UUID id);
-
-
 }

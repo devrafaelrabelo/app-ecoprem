@@ -26,6 +26,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -310,6 +311,14 @@ public class AuthController {
     })
     @GetMapping("/session")
     public ResponseEntity<?> validateOrRefreshSession(HttpServletRequest request, HttpServletResponse response) {
+
+        if (request.getCookies() != null) {
+            Arrays.stream(request.getCookies())
+                    .forEach(cookie -> log.info("🍪 Cookie recebido: {} = {}", cookie.getName(), cookie.getValue()));
+        } else {
+            log.info("🚫 Nenhum cookie recebido na requisição.");
+        }
+
         try {
             SessionUserResponse session = authService.validateOrRefreshSession(request, response);
             return ResponseEntity.ok(Map.of("valid", true, "data", session)); // retorna dados atualizados

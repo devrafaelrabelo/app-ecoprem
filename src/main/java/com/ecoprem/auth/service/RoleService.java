@@ -1,5 +1,6 @@
 package com.ecoprem.auth.service;
 
+import com.ecoprem.auth.dto.RoleResponse;
 import com.ecoprem.auth.exception.InvalidRequestException;
 import com.ecoprem.auth.exception.InvalidRoleAssignmentException;
 import com.ecoprem.auth.exception.RoleNotFoundException;
@@ -18,6 +19,17 @@ public class RoleService {
     private final RoleRepository roleRepository;
 
     private static final Set<String> ALLOWED_REGISTRATION_ROLES = Set.of("CLIENT", "BASIC_USER");
+
+    public List<RoleResponse> listAll() {
+        return roleRepository.findAll().stream()
+                .map(role -> new RoleResponse(
+                        role.getId(),
+                        role.getName(),
+                        role.getDescription(),
+                        role.isSystemRole()
+                ))
+                .toList();
+    }
 
     public List<Role> resolveAndValidateRoles(List<String> roleNames) {
         if (roleNames == null || roleNames.isEmpty()) {

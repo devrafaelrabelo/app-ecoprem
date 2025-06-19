@@ -43,21 +43,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors() // <- ATIVAR SUPORTE CORS
-                .and()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/DevTest").permitAll()
-                        .requestMatchers("/api/auth/validate").permitAll()
-                        .requestMatchers("/api/auth/session").permitAll()
-                        .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/DevTest",
+                                "/api/health",
                                 "/api/auth/login",
                                 "/api/auth/2fa/validate-login",
                                 "/api/auth/logout",
                                 "/api/auth/refresh",
+                                "/api/auth/session",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

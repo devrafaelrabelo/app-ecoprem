@@ -5,6 +5,7 @@ import com.ecoprem.auth.exception.AuthenticationException;
 import com.ecoprem.auth.repository.ActiveSessionRepository;
 import com.ecoprem.auth.service.RevokedTokenService;
 import com.ecoprem.auth.util.JwtCookieUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -35,6 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final RevokedTokenService revokedTokenService;
     private final AuthPathProperties authPathProperties;
     private final ActiveSessionRepository activeSessionRepository;
+    private final ObjectMapper objectMapper;
 
 
     @Override
@@ -52,9 +55,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = jwtCookieUtil.extractTokenFromCookie(request);
-        if (token == null) {
-            log.debug("No JWT token found in cookies.");
-            filterChain.doFilter(request, response);
+        String refreshToken = jwtCookieUtil.extractRefreshTokenFromCookie(request);
+
+        if (token == null && refreshToken == null) {
+            log.warn("🚫 Rejeitado: requisição sem access_token nem refresh_token para {}", path);
+            respondUnauthorized(response, "Requisição sem token de autenticação.");
             return;
         }
 
@@ -99,6 +104,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void respondUnauthorized(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"" + message + "\"}");
+
+        String json = objectMapper.writeValueAsString(
+                Map.of(
+                        "type", "https://api.ecoprem.com/errors/unauthorized",
+                        "title", "Unauthorized request",
+                        "status", 401,
+                        "detail", message,
+                        "timestamp", LocalDateTime.now().toString()
+                )
+        );
+
+        response.getWriter().write(json);
     }
 }

@@ -1,5 +1,8 @@
 package com.ecoprem.common;
 
+import lombok.Getter;
+
+@Getter
 public enum ErrorType {
 
     INVALID_CREDENTIALS("https://api.ecoprem.com/errors/invalid-credentials", "Invalid credentials"),
@@ -20,7 +23,28 @@ public enum ErrorType {
     RATE_LIMIT_EXCEEDED("https://api.ecoprem.com/errors/rate-limit", "Rate limit exceeded"),
     ACCESS_DENIED("https://api.ecoprem.com/errors/access-denied", "Access denied"),
     VALIDATION("https://api.ecoprem.com/errors/validation", "Validation failed"),
-    INVALID_BODY("https://api.ecoprem.com/errors/invalid-body", "Invalid request body");
+    RESOURCE_NOT_FOUND("https://api.ecoprem.com/errors/not-found", "Recurso não encontrado"),
+    INVALID_BODY("https://api.ecoprem.com/errors/invalid-body", "Invalid request body"),
+    INVALID_TOKEN("https://api.ecoprem.com/errors/invalid-token", "Invalid or expired session"),
+    INVALID_RESOURCE_STATUS(
+            "https://api.ecoprem.com/errors/invalid-resource-status",
+            "Status do recurso inválido ou inexistente"
+    ),
+
+    INVALID_COMPANY(
+            "https://api.ecoprem.com/errors/invalid-company",
+            "Empresa vinculada inválida ou inexistente"
+    ),
+
+    INVALID_RESOURCE_TYPE(
+            "https://api.ecoprem.com/errors/invalid-resource-type",
+            "Tipo de recurso inválido ou inexistente"
+    ),
+
+    INVALID_USER(
+            "https://api.ecoprem.com/errors/invalid-user",
+            "Usuário vinculado inválido ou inexistente"
+    );
 
     private final String uri;
     private final String title;
@@ -30,11 +54,4 @@ public enum ErrorType {
         this.title = title;
     }
 
-    public String getUri() {
-        return uri;
-    }
-
-    public String getTitle() {
-        return title;
-    }
 }

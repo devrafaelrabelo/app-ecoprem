@@ -1,6 +1,7 @@
 package com.ecoprem.common;
 
 import com.ecoprem.auth.exception.*;
+import com.ecoprem.resource.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -147,4 +148,65 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleAccessDenied(CustomAccessDeniedException ex, HttpServletRequest request) {
         return buildError(HttpStatus.FORBIDDEN, ErrorType.ACCESS_DENIED, ex.getMessage(), request.getRequestURI(), null);
     }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiError> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, ErrorType.INVALID_TOKEN, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                ErrorType.RESOURCE_NOT_FOUND,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(InvalidResourceStatusException.class)
+    public ResponseEntity<ApiError> handleInvalidStatus(InvalidResourceStatusException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.INVALID_RESOURCE_STATUS,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(InvalidCompanyException.class)
+    public ResponseEntity<ApiError> handleInvalidCompany(InvalidCompanyException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.INVALID_COMPANY,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(InvalidResourceTypeException.class)
+    public ResponseEntity<ApiError> handleInvalidType(InvalidResourceTypeException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.INVALID_RESOURCE_TYPE,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(InvalidUserException.class)
+    public ResponseEntity<ApiError> handleInvalidUser(InvalidUserException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorType.INVALID_USER,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
 }

@@ -33,8 +33,9 @@ public class AllocationHistory {
     @Column(name = "resource_type", nullable = false)
     private String resourceType; // ex: "CORPORATE_PHONE", "EXTENSION", "EMPLOYMENT"
 
-    @Column(name = "resource_id", nullable = false)
-    private UUID resourceId;
+    @ManyToOne
+    @JoinColumn(name = "resource_id")
+    private Resource resource;
 
     @ManyToOne
     @JoinColumn(name = "registered_by")
