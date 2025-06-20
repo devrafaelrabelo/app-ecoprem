@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -52,7 +53,8 @@ public class CorporatePhoneService {
                 parsePlanType(dto.getPlanType()).name(),
                 parseStatus(dto.getStatus()).name(),
                 dto.getCurrentUserId(),
-                dto.getCompanyId()
+                dto.getCompanyId(),
+                LocalDateTime.now()
         );
     }
 
@@ -67,7 +69,8 @@ public class CorporatePhoneService {
                 parsePlanType(dto.getPlanType()).name(),
                 parseStatus(dto.getStatus()).name(),
                 dto.getCurrentUserId(),
-                dto.getCompanyId()
+                dto.getCompanyId(),
+                LocalDateTime.now()
         );
 
         if (updated == 0) {

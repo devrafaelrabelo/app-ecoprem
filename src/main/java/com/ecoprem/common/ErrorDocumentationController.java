@@ -104,6 +104,11 @@ public class ErrorDocumentationController {
                         "type", ErrorType.INVALID_PHONE.getUri(),
                         "title", ErrorType.INVALID_PHONE.getTitle(),
                         "status", 400
+                ),
+                Map.of(
+                        "type",  ErrorType.INTERNAL_EXTENSION_ERROR.getUri(),
+                        "title",  ErrorType.INTERNAL_EXTENSION_ERROR.getTitle(),
+                        "status", 404
                 )
         );
     }

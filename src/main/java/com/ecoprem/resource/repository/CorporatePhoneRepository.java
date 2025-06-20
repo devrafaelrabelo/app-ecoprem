@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface CorporatePhoneRepository extends JpaRepository<CorporatePhone, UUID> {
@@ -13,10 +14,10 @@ public interface CorporatePhoneRepository extends JpaRepository<CorporatePhone, 
     @Modifying
     @Query(value = """
     INSERT INTO corporate_phone (
-        id, number, carrier, plan_type, status, current_user_id, company_id
+        id, number, carrier, plan_type, status, current_user_id, company_id, last_updated
     ) VALUES (
-        :id, :number, CAST(:carrier AS carrier_type), CAST(:planType AS plan_type), CAST(:status AS phone_status),
-        :currentUserId, :companyId
+        :id, :number, CAST(:carrier AS carrier_type), CAST(:planType AS plan_type),
+        CAST(:status AS phone_status), :currentUserId, :companyId, :lastUpdated
     )
     """, nativeQuery = true)
     void insertManual(
@@ -26,7 +27,8 @@ public interface CorporatePhoneRepository extends JpaRepository<CorporatePhone, 
             @Param("planType") String planType,
             @Param("status") String status,
             @Param("currentUserId") UUID currentUserId,
-            @Param("companyId") UUID companyId
+            @Param("companyId") UUID companyId,
+            @Param("lastUpdated") LocalDateTime lastUpdated
     );
 
     @Modifying
@@ -38,7 +40,8 @@ public interface CorporatePhoneRepository extends JpaRepository<CorporatePhone, 
         plan_type = CAST(:planType AS plan_type),
         status = CAST(:status AS phone_status),
         current_user_id = :currentUserId,
-        company_id = :companyId
+        company_id = :companyId,
+        last_updated = :lastUpdated
     WHERE id = :id
 """)
     int updateManual(@Param("id") UUID id,
@@ -47,7 +50,8 @@ public interface CorporatePhoneRepository extends JpaRepository<CorporatePhone, 
                      @Param("planType") String planType,
                      @Param("status") String status,
                      @Param("currentUserId") UUID currentUserId,
-                     @Param("companyId") UUID companyId);
+                     @Param("companyId") UUID companyId,
+                     @Param("lastUpdated") LocalDateTime lastUpdated);
 
     boolean existsByNumber(String number);
 }

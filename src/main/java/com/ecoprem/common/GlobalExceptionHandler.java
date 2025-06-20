@@ -248,5 +248,9 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PHONE, ex.getMessage(), request.getRequestURI(), null);
     }
 
+    @ExceptionHandler(InternalExtensionException.class)
+    public ResponseEntity<ApiError> handleInternalExtensionException(InternalExtensionException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INTERNAL_EXTENSION_ERROR, ex.getMessage(), request.getRequestURI(), null);
+    }
 
 }

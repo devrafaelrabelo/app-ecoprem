@@ -80,7 +80,10 @@ public enum ErrorType {
     INVALID_PHONE(
             "https://api.ecoprem.com/errors/invalid-phone",
             "Telefone inválido"
-    );
+    ),
+    INTERNAL_EXTENSION_ERROR("/errors/internal-extension/not-found", "Erro no processo interno"),;
+
+
 
     private final String uri;
     private final String title;

@@ -7,12 +7,16 @@ import com.ecoprem.enums.PhoneStatus;
 import com.ecoprem.enums.PlanType;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "corporate_phone")
 @Data
+@EntityListeners(AuditingEntityListener.class)
 public class CorporatePhone {
 
     @Id
@@ -40,4 +44,8 @@ public class CorporatePhone {
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
+
+    @LastModifiedDate
+    @Column(name = "last_updated")
+    private LocalDateTime lastUpdated;
 }
