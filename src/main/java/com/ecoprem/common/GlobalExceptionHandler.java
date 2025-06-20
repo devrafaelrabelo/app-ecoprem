@@ -209,4 +209,44 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidCarrierException.class)
+    public ResponseEntity<ApiError> handleCarrier(InvalidCarrierException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_CARRIER, ex.getMessage(), request.getRequestURI(),null);
+    }
+
+    @ExceptionHandler(InvalidPlanTypeException.class)
+    public ResponseEntity<ApiError> handlePlanType(InvalidPlanTypeException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PLAN_TYPE, ex.getMessage(), request.getRequestURI(),null);
+    }
+
+    @ExceptionHandler(InvalidPhoneStatusException.class)
+    public ResponseEntity<ApiError> handleStatus(InvalidPhoneStatusException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PHONE_STATUS, ex.getMessage(), request.getRequestURI(),null);
+    }
+
+    @ExceptionHandler(CompanyNotFoundException.class)
+    public ResponseEntity<ApiError> handleCompanyNotFound(CompanyNotFoundException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, ErrorType.COMPANY_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(CorporatePhoneNotFoundException.class)
+    public ResponseEntity<ApiError> handleCorporatePhoneNotFound(CorporatePhoneNotFoundException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, ErrorType.CORPORATE_PHONE_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(DuplicateNumberPhoneException.class)
+    public ResponseEntity<ApiError> handleDuplicateNumberPhone(DuplicateNumberPhoneException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, ErrorType.DUPLICATE_NUMBER_PHONE, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(DuplicateResourceCodeException.class)
+    public ResponseEntity<ApiError> handleDuplicateResourceCode(DuplicateResourceCodeException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, ErrorType.DUPLICATE_RESOURCE_CODE, ex.getMessage(), request.getRequestURI(), null);
+    }
+    @ExceptionHandler(InvalidPhoneException.class)
+    public ResponseEntity<ApiError> handleInvalidPhone(InvalidPhoneException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PHONE, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+
 }

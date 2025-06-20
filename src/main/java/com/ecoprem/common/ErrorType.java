@@ -44,6 +44,42 @@ public enum ErrorType {
     INVALID_USER(
             "https://api.ecoprem.com/errors/invalid-user",
             "Usuário vinculado inválido ou inexistente"
+    ),
+    INVALID_CARRIER(
+            "https://api.ecoprem.com/errors/invalid-carrier",
+            "Operadora inválida fornecida"
+    ),
+    INVALID_PLAN_TYPE(
+            "https://api.ecoprem.com/errors/invalid-plan-type",
+            "Tipo de plano inválido fornecido"
+    ),
+    INVALID_PHONE_STATUS(
+            "https://api.ecoprem.com/errors/invalid-phone-status",
+            "Status do telefone inválido fornecido"
+    ),
+    CORPORATE_PHONE_NOT_FOUND(
+            "https://api.ecoprem.com/errors/corporate-phone-not-found",
+            "Telefone corporativo não encontrado"
+    ),
+    RELATED_USER_NOT_FOUND(
+            "https://api.ecoprem.com/errors/related-user-not-found",
+            "Usuário vinculado não encontrado"
+    ),
+    COMPANY_NOT_FOUND(
+            "https://api.ecoprem.com/errors/company-not-found",
+            "Empresa não encontrada"
+    ),
+    DUPLICATE_NUMBER_PHONE(
+            "https://api.ecoprem.com/errors/duplicate-number-phone",
+            "Número de telefone duplicado"
+    ),
+    DUPLICATE_RESOURCE_CODE(
+            "https://api.ecoprem.com/errors/duplicate-resource-code",
+            "Código de recurso duplicado"
+    ),
+    INVALID_PHONE(
+            "https://api.ecoprem.com/errors/invalid-phone",
+            "Telefone inválido"
     );
 
     private final String uri;
@@ -53,5 +89,4 @@ public enum ErrorType {
         this.uri = uri;
         this.title = title;
     }
-
 }

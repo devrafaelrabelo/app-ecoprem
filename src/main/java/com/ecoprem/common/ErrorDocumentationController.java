@@ -59,6 +59,51 @@ public class ErrorDocumentationController {
                         "type", ErrorType.INVALID_USER.getUri(),
                         "title", ErrorType.INVALID_USER.getTitle(),
                         "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_CARRIER.getUri(),
+                        "title", ErrorType.INVALID_CARRIER.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_PLAN_TYPE.getUri(),
+                        "title", ErrorType.INVALID_PLAN_TYPE.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_PHONE_STATUS.getUri(),
+                        "title", ErrorType.INVALID_PHONE_STATUS.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.CORPORATE_PHONE_NOT_FOUND.getUri(),
+                        "title", ErrorType.CORPORATE_PHONE_NOT_FOUND.getTitle(),
+                        "status", 404
+                ),
+                Map.of(
+                        "type", ErrorType.RELATED_USER_NOT_FOUND.getUri(),
+                        "title", ErrorType.RELATED_USER_NOT_FOUND.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.COMPANY_NOT_FOUND.getUri(),
+                        "title", ErrorType.COMPANY_NOT_FOUND.getTitle(),
+                        "status", 404
+                ),
+                Map.of(
+                        "type", ErrorType.DUPLICATE_NUMBER_PHONE.getUri(),
+                        "title", ErrorType.DUPLICATE_NUMBER_PHONE.getTitle(),
+                        "status", 409
+                ),
+                Map.of(
+                        "type", ErrorType.DUPLICATE_RESOURCE_CODE.getUri(),
+                        "title", ErrorType.DUPLICATE_RESOURCE_CODE.getTitle(),
+                        "status", 409
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_PHONE.getUri(),
+                        "title", ErrorType.INVALID_PHONE.getTitle(),
+                        "status", 400
                 )
         );
     }
