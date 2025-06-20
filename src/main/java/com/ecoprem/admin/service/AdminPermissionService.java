@@ -3,6 +3,7 @@ package com.ecoprem.admin.service;
 import com.ecoprem.admin.dto.AdminPermissionDTO;
 import com.ecoprem.admin.repository.AdminPermissionRepository;
 import com.ecoprem.entity.security.Permission;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,13 @@ public class AdminPermissionService {
         return adminRermissionRepository.findAll().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public AdminPermissionDTO findById(UUID id) {
+        Permission permission = adminRermissionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Permissão não encontrada"));
+
+        return toDTO(permission);
     }
 
     @Transactional

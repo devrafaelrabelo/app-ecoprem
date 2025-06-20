@@ -65,11 +65,11 @@ public class UserPermissionService {
         effectivePermissions.addAll(rolePermissions);
 
         List<MenuItem> allMenus = List.of(
-                new MenuItem("Usuários", "user", "/users", List.of("user:view"), List.of(), "TI"),
-                new MenuItem("Recursos", "box", "/resources", List.of("resource:view"), List.of(), "TI"),
-                new MenuItem("Tipos de Recurso", "layers", "/resource-types", List.of("resourcetype:view"), List.of(), "TI"),
-                new MenuItem("Status de Recurso", "check-circle", "/resource-status", List.of("resourcestatus:view"), List.of(), "TI"),
-                new MenuItem("Permissões e Cargos", "shield", "/roles", List.of("role:view", "permission:view"), List.of(), "TI")
+                new MenuItem("Usuários", "Users", "/users", List.of("user:view"), List.of(), "TI"),
+                new MenuItem("Recursos", "Package", "/resources", List.of("resource:view"), List.of(), "TI"),
+                new MenuItem("Tipos de Recurso", "Credit-card", "/resource-types", List.of("resourcetype:view"), List.of(), "TI"),
+                new MenuItem("Status de Recurso", "Multiple", "/resource-status", List.of("resourcestatus:view"), List.of(), "TI"),
+                new MenuItem("Permissões e Cargos", "Fire", "/roles", List.of("role:view", "permission:view"), List.of(), "TI")
         );
 
         List<MenuItem> availableMenus = allMenus.stream()

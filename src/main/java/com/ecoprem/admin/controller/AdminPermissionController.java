@@ -21,6 +21,11 @@ public class AdminPermissionController {
         return ResponseEntity.ok(adminPermissionService.findAll());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<AdminPermissionDTO> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(adminPermissionService.findById(id));
+    }
+
     @PostMapping
     public ResponseEntity<AdminPermissionDTO> create(@RequestBody AdminPermissionDTO dto) {
         return ResponseEntity.ok(adminPermissionService.create(dto));
