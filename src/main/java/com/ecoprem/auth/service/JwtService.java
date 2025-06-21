@@ -19,8 +19,8 @@ public class JwtService {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    public String generateAccessToken(UUID userId, String email, List<String> roles, String sessionId) {
-        return jwtTokenProvider.generateToken(userId, email, roles, sessionId);
+    public String generateAccessToken(UUID userId, String email, List<String> permissions, String sessionId) {
+        return jwtTokenProvider.generateToken(userId, email, permissions, sessionId);
     }
 
     public Claims extractClaims(String token) {

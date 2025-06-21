@@ -17,9 +17,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -34,15 +32,14 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(UUID userId, String email, List<String> roles, String sessionId) {
+    public String generateToken(UUID userId, String email, List<String> permissions, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
         return Jwts.builder()
                 .subject(userId.toString())
-
                 .claim("email", email)
-                .claim("roles", roles) // ← agora plural
+                .claim("authorities", permissions) // ← mudou aqui
                 .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -96,5 +93,26 @@ public class JwtTokenProvider {
 
     public boolean isTokenExpired(Claims claims) {
         return claims.getExpiration().before(new Date());
+    }
+
+    public List<String> getPermissions(String token) {
+        Claims claims = extractAllClaims(token);
+
+        Object authorities = claims.get("authorities");
+        if (authorities instanceof List<?> list) {
+            return list.stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .toList();
+        }
+        return Collections.emptyList();
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey()) // substitui o antigo .setSigningKey(...)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

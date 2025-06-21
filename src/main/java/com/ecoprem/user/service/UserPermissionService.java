@@ -8,6 +8,7 @@ import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.security.UserPermission;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.user.dto.UserPermissionsResponse;
+import com.ecoprem.user.dto.UserPermissionsResponse.MenuGroup;
 import com.ecoprem.user.dto.UserPermissionsResponse.MenuItem;
 import com.ecoprem.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -64,30 +65,53 @@ public class UserPermissionService {
         effectivePermissions.addAll(directPermissions);
         effectivePermissions.addAll(rolePermissions);
 
-        List<MenuItem> allMenus = List.of(
-                new MenuItem("Usuários", "Users", "/users", List.of("user:view"), List.of(), "TI"),
-                new MenuItem("Recursos", "Package", "/resources", List.of("resource:view"), List.of(), "TI"),
-                new MenuItem("Tipos de Recurso", "Credit-card", "/resource-types", List.of("resourcetype:view"), List.of(), "TI"),
-                new MenuItem("Status de Recurso", "Multiple", "/resource-status", List.of("resourcestatus:view"), List.of(), "TI"),
-                new MenuItem("Permissões e Cargos", "Fire", "/roles", List.of("role:view", "permission:view"), List.of(), "TI")
+        List<MenuGroup> allGroups = List.of(
+                new MenuGroup("Usuários", "Users", List.of(
+                        new MenuItem("Gerenciar Usuários", "User", "/users",
+                                List.of("user:view"), List.of())
+                )),
+                new MenuGroup("Recursos", "Package", List.of(
+                        new MenuItem("Recursos", "Package", "/resources",
+                                List.of("resource:view"), List.of()),
+                        new MenuItem("Tipos de Recurso", "Credit-card", "/resource-types",
+                                List.of("resourcetype:view"), List.of()),
+                        new MenuItem("Status de Recurso", "Multiple", "/resource-status",
+                                List.of("resourcestatus:view"), List.of())
+                )),
+                new MenuGroup("Telefonia", "Phone", List.of(
+                        new MenuItem("Telefones Corporativos", "Phone", "/corporate-phones",
+                                List.of("corporate-phone:view"), List.of()),
+                        new MenuItem("Ramais Internos", "Phone-forwarded", "/internal-extensions",
+                                List.of("internal-extension:view"), List.of())
+                )),
+                new MenuGroup("Segurança", "Shield-check", List.of(
+                        new MenuItem("Cargos e Permissões", "Shield-check", "/roles",
+                                List.of("role:view", "permission:view"), List.of())
+                ))
         );
 
-        List<MenuItem> availableMenus = allMenus.stream()
-                .filter(menu -> effectivePermissions.containsAll(menu.requiredPermissions()))
-                .map(menu -> new MenuItem(
-                        menu.label(),
-                        menu.icon(),
-                        menu.path(),
-                        menu.requiredPermissions(),
-                        effectivePermissions.stream()
-                                .filter(p -> p.startsWith(getPrefix(menu)))
-                                .filter(p -> !menu.requiredPermissions().contains(p))
-                                .toList(),
-                        menu.section() // ← agora inclui a seção
-                ))
+        // Filtra apenas menus visíveis ao usuário
+        List<MenuGroup> visibleGroups = allGroups.stream()
+                .map(group -> {
+                    List<MenuItem> visibleItems = group.submenu().stream()
+                            .filter(menu -> effectivePermissions.containsAll(menu.requiredPermissions()))
+                            .map(menu -> new MenuItem(
+                                    menu.label(),
+                                    menu.icon(),
+                                    menu.path(),
+                                    menu.requiredPermissions(),
+                                    effectivePermissions.stream()
+                                            .filter(p -> p.startsWith(getPrefix(menu)))
+                                            .filter(p -> !menu.requiredPermissions().contains(p))
+                                            .toList()
+                            ))
+                            .toList();
+                    return new MenuGroup(group.title(), group.icon(), visibleItems);
+                })
+                .filter(group -> !group.submenu().isEmpty())
                 .toList();
 
-        return new UserPermissionsResponse(new ArrayList<>(effectivePermissions), availableMenus);
+        return new UserPermissionsResponse(new ArrayList<>(effectivePermissions), visibleGroups);
     }
 
     private String getPrefix(MenuItem menu) {

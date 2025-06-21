@@ -2,6 +2,7 @@ package com.ecoprem.user.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
 import com.ecoprem.auth.dto.SessionUserResponse;
+import com.ecoprem.entity.security.Permission;
 import com.ecoprem.user.dto.UserBasicDTO;
 import com.ecoprem.auth.dto.UserProfileDTO;
 import com.ecoprem.auth.exception.*;
@@ -132,11 +133,17 @@ public class UserService {
     }
 
     public SessionUserResponse toSessionUserResponse(User user) {
+        List<String> permissions = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(Permission::getName)
+                .distinct()
+                .toList();
+
         return SessionUserResponse.builder()
                 .valid(true)
                 .username(user.getUsername())
                 .fullName(user.getFullName())
-                .roles(user.getRoles().stream().map(Role::getName).toList())
+                .permissions(permissions)
                 .twoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
     }

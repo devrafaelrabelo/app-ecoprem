@@ -22,12 +22,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "Autenticação", description = "Endpoints relacionados à autenticação, sessão e controle de usuários.")
@@ -43,6 +47,32 @@ public class AuthController {
     private final AuthProperties authProperties;
     private final AuthService authService;
     private final LoginFinalizerService loginFinalizerService;
+
+
+    @GetMapping("/protected")
+    @PreAuthorize("hasAuthority('resource:view')")
+    public Map<String, Object> testProtectedEndpoint(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        String username;
+        if (principal instanceof User user) {
+            username = user.getUsername();
+        } else {
+            username = principal.toString(); // fallback (UUID ou "anonymousUser")
+        }
+
+        List<String> permissions = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        log.info("🔐 Acesso ao endpoint protegido por: {}", username);
+
+        return Map.of(
+                "message", "Você acessou um endpoint protegido com sucesso!",
+                "user", username,
+                "permissions", permissions
+        );
+    }
 
     @GetMapping("/DevTest")
     public ResponseEntity<Map<String, Object>> getAuthConfig() {
@@ -69,7 +99,6 @@ public class AuthController {
 
         return ResponseEntity.ok(result);
     }
-
 
     @Operation(
             summary = "Autenticar usuário",

@@ -5,6 +5,7 @@ import com.ecoprem.auth.dto.LoginWithRefreshResponse;
 import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.entity.auth.RefreshToken;
+import com.ecoprem.entity.security.Permission;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.user.service.UserService;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,10 +60,16 @@ public class LoginFinalizerService {
     }
 
     private String generateAccessToken(User user, String sessionId) {
+        List<String> permissions = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(Permission::getName)
+                .distinct()
+                .toList();
+
         return jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRoles().stream().map(Role::getName).toList(),
+                permissions, // agora com permissions, não roles
                 sessionId
         );
     }

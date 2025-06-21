@@ -52,8 +52,15 @@ public class SessionAuthenticationProcessor {
 
         activeSessionService.updateLastAccessIfValid(sessionId, user);
 
+        // 🔥 Novidade: carregar permissões e aplicar como authorities
+        var permissions = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(p -> new org.springframework.security.core.authority.SimpleGrantedAuthority(p.getName()))
+                .distinct()
+                .toList();
+
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                user, null, null
+                user, null, permissions
         );
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);

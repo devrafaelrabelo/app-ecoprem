@@ -21,8 +21,8 @@ public class SessionUserResponse {
     @Schema(description = "Nome completo do usuário", example = "Rafael Rabelo Gonçalves")
     private String fullName;
 
-    @Schema(description = "Lista de papéis (roles) do usuário", example = "[\"ADMIN\", \"USER\"]")
-    private List<String> roles;
+    @Schema(description = "Lista de permissões efetivas do usuário", example = "[\"CREATE_USER\", \"DELETE_PHONE\"]")
+    private List<String> permissions;
 
     @Schema(description = "Indica se o segundo fator de autenticação está habilitado", example = "true")
     private boolean twoFactorEnabled;

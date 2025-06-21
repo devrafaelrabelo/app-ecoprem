@@ -8,6 +8,7 @@ import com.ecoprem.auth.security.JwtTokenProvider;
 import com.ecoprem.auth.util.JwtCookieUtil;
 import com.ecoprem.auth.util.LoginMetadataExtractor;
 import com.ecoprem.entity.auth.*;
+import com.ecoprem.entity.security.Permission;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.user.repository.UserRepository;
@@ -318,12 +319,18 @@ public class AuthService {
                                             RefreshToken refreshToken, Duration duration,
                                             HttpServletResponse response) {
 
+        // Gera lista de permissões do usuário
+        List<String> permissions = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(Permission::getName)
+                .distinct()
+                .toList();
+
+        // Gera o token com base nas permissões
         String accessToken = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRoles().stream()
-                        .map(Role::getName)
-                        .toList(),
+                permissions,
                 sessionId
         );
 
