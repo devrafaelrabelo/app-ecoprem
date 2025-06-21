@@ -1,10 +1,6 @@
 package com.ecoprem.core.audit.repository;
 
-import com.ecoprem.core.audit.entity.SecurityAuditEvent;
-import io.micrometer.core.instrument.config.MeterFilter;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import com.ecoprem.entity.audit.SecurityAuditEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 

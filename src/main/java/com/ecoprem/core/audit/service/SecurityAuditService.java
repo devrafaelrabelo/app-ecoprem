@@ -1,7 +1,7 @@
 package com.ecoprem.core.audit.service;
 
 import com.ecoprem.auth.util.LoginMetadataExtractor;
-import com.ecoprem.core.audit.entity.SecurityAuditEvent;
+import com.ecoprem.entity.audit.SecurityAuditEvent;
 import com.ecoprem.core.audit.repository.SecurityAuditEventRepository;
 import com.ecoprem.entity.user.User;
 import jakarta.servlet.http.HttpServletRequest;

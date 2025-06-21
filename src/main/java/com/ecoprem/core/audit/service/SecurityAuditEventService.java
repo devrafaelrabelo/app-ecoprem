@@ -1,7 +1,8 @@
 package com.ecoprem.core.audit.service;
 
-import com.ecoprem.admin.dto.SecurityAuditEventDTO;
-import com.ecoprem.core.audit.entity.SecurityAuditEvent;
+
+import com.ecoprem.core.audit.dto.SecurityAuditEventDTO;
+import com.ecoprem.entity.audit.SecurityAuditEvent;
 import com.ecoprem.core.audit.repository.SecurityAuditEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

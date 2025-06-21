@@ -1,6 +1,7 @@
 package com.ecoprem.admin.controller;
 
-import com.ecoprem.admin.dto.SecurityAuditEventDTO;
+
+import com.ecoprem.core.audit.dto.SecurityAuditEventDTO;
 import com.ecoprem.core.audit.service.SecurityAuditEventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

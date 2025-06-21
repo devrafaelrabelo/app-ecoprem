@@ -1,6 +1,6 @@
 package com.ecoprem.core.audit.filter;
 
-import com.ecoprem.core.audit.entity.RequestAuditLog;
+import com.ecoprem.entity.audit.RequestAuditLog;
 import com.ecoprem.core.audit.repository.RequestAuditLogRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
