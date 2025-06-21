@@ -1,8 +1,10 @@
 package com.ecoprem.entity.audit;
 
+import com.ecoprem.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "request_audit_log")
@@ -35,4 +37,12 @@ public class RequestAuditLog {
     private Integer durationMs;
 
     private LocalDateTime timestamp;
+
+    // ✅ Relacionamento com o usuário
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_request_log_user"))
+    private User user;
+
+    @Column(name = "user_id_ref")
+    private UUID userId;
 }

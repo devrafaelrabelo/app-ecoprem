@@ -1,8 +1,12 @@
 package com.ecoprem.admin.controller;
 
 
+import com.ecoprem.core.audit.dto.RequestAuditLogDTO;
 import com.ecoprem.core.audit.dto.SecurityAuditEventDTO;
+import com.ecoprem.core.audit.dto.SystemAuditLogDTO;
+import com.ecoprem.core.audit.service.RequestAuditLogService;
 import com.ecoprem.core.audit.service.SecurityAuditEventService;
+import com.ecoprem.core.audit.service.SystemAuditLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,7 +28,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AdminAuditController {
 
-    private final SecurityAuditEventService auditService;
+    private final SecurityAuditEventService securityAuditEventService;
+    private final RequestAuditLogService requestAuditLogService;
+    private final SystemAuditLogService systemAuditLogService;
 
     @PreAuthorize("hasAuthority('audit:view')")
     @Operation(
@@ -53,7 +59,64 @@ public class AdminAuditController {
 
             @Parameter(hidden = true) Pageable pageable
     ) {
-        return auditService.search(eventType, username, startDate, endDate, pageable);
+        return securityAuditEventService.search(eventType, username, startDate, endDate, pageable);
+    }
+
+    @Operation(
+            summary = "Listar logs de requisições HTTP auditadas",
+            description = "Retorna os registros de requisições HTTP capturados pelo sistema, incluindo método, IP, rota acessada, status, usuário e tempo de execução."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de logs retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso")
+    })
+    @GetMapping("/request-events")
+    @PreAuthorize("hasAuthority('audit:view')")
+    public Page<RequestAuditLogDTO> listRequestLogs(
+            @Parameter(description = "Rota acessada (filtro parcial, ex: /api/auth)")
+            @RequestParam(required = false) String path,
+
+            @Parameter(description = "Endereço IP de origem")
+            @RequestParam(required = false) String ip,
+
+            @Parameter(description = "Método HTTP (GET, POST, etc.)")
+            @RequestParam(required = false) String method,
+
+            @Parameter(description = "Username do usuário autenticado")
+            @RequestParam(required = false) String username,
+
+            @Parameter(description = "Código de status da resposta (ex: 200, 403, 500)")
+            @RequestParam(required = false) Integer status,
+
+            @Parameter(description = "Data/hora inicial no formato ISO (ex: 2025-06-21T00:00:00)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+
+            @Parameter(description = "Data/hora final no formato ISO (ex: 2025-06-21T23:59:59)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+
+            @Parameter(hidden = true) Pageable pageable
+    ) {
+        return requestAuditLogService.search(path, ip, method, username, status, start, end, pageable);
+    }
+
+    @GetMapping("/system-events")
+    @PreAuthorize("hasAuthority('audit:view')")
+    @Operation(
+            summary = "Listar auditoria de ações administrativas",
+            description = "Retorna ações sensíveis realizadas no sistema, como atribuição de permissões, alterações de usuários, recursos corporativos e mudanças administrativas."
+    )
+    public Page<SystemAuditLogDTO> listSystemEvents(
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String targetEntity,
+            @RequestParam(required = false) String targetId,
+            @RequestParam(required = false) String performedBy,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            Pageable pageable
+    ) {
+        return systemAuditLogService.search(action, targetEntity, targetId, performedBy, start, end, pageable);
     }
 }
 
