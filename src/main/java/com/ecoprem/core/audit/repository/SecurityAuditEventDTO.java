@@ -1,4 +1,4 @@
-package com.ecoprem.core.audit.dto;
+package com.ecoprem.core.audit.repository;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
