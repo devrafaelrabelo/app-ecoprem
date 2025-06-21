@@ -1,9 +1,17 @@
 package com.ecoprem.admin.controller;
 
 import com.ecoprem.admin.dto.AdminPermissionDTO;
+import com.ecoprem.admin.dto.AssignPermissionRequest;
 import com.ecoprem.admin.service.AdminPermissionService;
+import com.ecoprem.auth.dto.UserPermissionDTO;
+import com.ecoprem.entity.user.User;
+import com.ecoprem.user.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,4 +49,6 @@ public class AdminPermissionController {
         adminPermissionService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+
 }

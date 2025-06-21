@@ -1,6 +1,8 @@
 package com.ecoprem.common;
 
 import com.ecoprem.auth.exception.*;
+import com.ecoprem.core.exception.ConflictException;
+import com.ecoprem.core.exception.PermissionNotFoundException;
 import com.ecoprem.resource.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -251,6 +253,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InternalExtensionException.class)
     public ResponseEntity<ApiError> handleInternalExtensionException(InternalExtensionException ex, HttpServletRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, ErrorType.INTERNAL_EXTENSION_ERROR, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> handleConflictException(ConflictException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, ErrorType.CONFLICT, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(PermissionNotFoundException.class)
+    public ResponseEntity<ApiError> handlePermissionNotFoundException(PermissionNotFoundException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, ErrorType.PERMISSION_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
     }
 
 }

@@ -26,6 +26,8 @@ public enum ErrorType {
     RESOURCE_NOT_FOUND("https://api.ecoprem.com/errors/not-found", "Recurso não encontrado"),
     INVALID_BODY("https://api.ecoprem.com/errors/invalid-body", "Invalid request body"),
     INVALID_TOKEN("https://api.ecoprem.com/errors/invalid-token", "Invalid or expired session"),
+    PERMISSION_NOT_FOUND("https://api.ecoprem.com/errors/permission-not-found", "Permissão não encontrada"),
+    CONFLICT("https://api.ecoprem.com/errors/conflict", "Conflito de dados"),
     INVALID_RESOURCE_STATUS(
             "https://api.ecoprem.com/errors/invalid-resource-status",
             "Status do recurso inválido ou inexistente"

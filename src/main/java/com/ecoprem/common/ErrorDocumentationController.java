@@ -36,6 +36,7 @@ public class ErrorDocumentationController {
                 Map.of("type", ErrorType.VALIDATION.getUri(), "title", ErrorType.VALIDATION.getTitle(), "status", 400),
                 Map.of("type", ErrorType.INVALID_BODY.getUri(), "title", ErrorType.INVALID_BODY.getTitle(), "status", 400),
                 Map.of("type", ErrorType.INVALID_TOKEN.getUri(), "title", ErrorType.INVALID_TOKEN.getTitle(), "status", 401),
+
                 Map.of("type", ErrorType.INVALID_RESOURCE_TYPE.getUri(),
                         "title", ErrorType.INVALID_RESOURCE_TYPE.getTitle(),
                         "status", 400
@@ -109,6 +110,16 @@ public class ErrorDocumentationController {
                         "type",  ErrorType.INTERNAL_EXTENSION_ERROR.getUri(),
                         "title",  ErrorType.INTERNAL_EXTENSION_ERROR.getTitle(),
                         "status", 404
+                ),
+                Map.of(
+                        "type", ErrorType.CONFLICT.getUri(),
+                        "title", ErrorType.CONFLICT.getTitle(),
+                        "status", 409
+                ),
+                Map.of(
+                "type", ErrorType.PERMISSION_NOT_FOUND.getUri(),
+                "title", ErrorType.PERMISSION_NOT_FOUND.getTitle(),
+                "status", 404
                 )
         );
     }
