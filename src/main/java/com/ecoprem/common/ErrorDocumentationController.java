@@ -117,10 +117,26 @@ public class ErrorDocumentationController {
                         "status", 409
                 ),
                 Map.of(
-                "type", ErrorType.PERMISSION_NOT_FOUND.getUri(),
-                "title", ErrorType.PERMISSION_NOT_FOUND.getTitle(),
-                "status", 404
+                        "type", ErrorType.PERMISSION_NOT_FOUND.getUri(),
+                        "title", ErrorType.PERMISSION_NOT_FOUND.getTitle(),
+                        "status", 404
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_PARAMETERS.getUri(),
+                        "title", ErrorType.INVALID_PARAMETERS.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.UNSUPPORTED_QUERY_PARAMETER.getUri(),
+                        "title", ErrorType.UNSUPPORTED_QUERY_PARAMETER.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.DATE_RANGE_INVALID.getUri(),
+                        "title", ErrorType.DATE_RANGE_INVALID.getTitle(),
+                        "status", 400
                 )
+
         );
     }
 }

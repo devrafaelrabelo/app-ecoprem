@@ -2,12 +2,16 @@ package com.ecoprem.common;
 
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.core.exception.ConflictException;
+import com.ecoprem.core.exception.InvalidDateRangeException;
 import com.ecoprem.core.exception.PermissionNotFoundException;
+import com.ecoprem.core.exception.UnsupportedQueryParamException;
 import com.ecoprem.resource.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.messaging.handler.annotation.support.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -265,4 +269,23 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.NOT_FOUND, ErrorType.PERMISSION_NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PARAMETERS, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(UnsupportedQueryParamException.class)
+    public ResponseEntity<ApiError> handleUnsupportedQueryParam(UnsupportedQueryParamException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.UNSUPPORTED_QUERY_PARAMETER, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(InvalidDateRangeException.class)
+    public ResponseEntity<ApiError> handleInvalidDateRange(InvalidDateRangeException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.DATE_RANGE_INVALID, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler({ MethodArgumentTypeMismatchException.class, ConversionFailedException.class })
+    public ResponseEntity<ApiError> handleInvalidDateFormat(Exception ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PARAMETERS, ex.getMessage(),request.getRequestURI(),null);
+    }
 }

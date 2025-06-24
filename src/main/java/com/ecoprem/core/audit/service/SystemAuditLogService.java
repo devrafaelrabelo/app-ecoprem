@@ -2,17 +2,21 @@ package com.ecoprem.core.audit.service;
 
 import com.ecoprem.core.audit.dto.SystemAuditLogDTO;
 import com.ecoprem.core.audit.repository.SystemAuditLogRepository;
+import com.ecoprem.core.exception.InvalidDateRangeException;
 import com.ecoprem.entity.audit.SystemAuditLog;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SystemAuditLogService {
@@ -42,15 +46,52 @@ public class SystemAuditLogService {
 
             repository.save(log);
         } catch (Exception e) {
-            // Logar internamente, mas não quebrar a execução
-            System.err.println("Erro ao registrar auditoria: " + e.getMessage());
+            log.warn("Erro ao registrar auditoria do sistema: {}", e.getMessage(), e);
         }
     }
 
     public Page<SystemAuditLogDTO> search(String action, String targetEntity, String targetId, String performedBy,
                                           LocalDateTime start, LocalDateTime end, Pageable pageable) {
-        // Aqui usaremos Specification ou um filtro customizável, posso montar se quiser.
-        return repository.findAll(pageable).map(this::toDTO);
+        if (start != null && end != null && end.isBefore(start)) {
+            throw new InvalidDateRangeException("A data final não pode ser anterior à data inicial.");
+        }
+
+        Specification<SystemAuditLog> spec = (root, query, cb) -> {
+            Predicate predicate = cb.conjunction();
+
+            if (action != null && !action.isBlank()) {
+                predicate = cb.and(predicate, cb.equal(root.get("action"), action));
+            }
+
+            if (targetEntity != null && !targetEntity.isBlank()) {
+                predicate = cb.and(predicate, cb.equal(root.get("targetEntity"), targetEntity));
+            }
+
+            if (targetId != null && !targetId.isBlank()) {
+                predicate = cb.and(predicate, cb.equal(root.get("targetId"), targetId));
+            }
+
+            if (performedBy != null && !performedBy.isBlank()) {
+                predicate = cb.and(predicate, cb.like(cb.lower(root.get("performedBy")), "%" + performedBy.toLowerCase() + "%"));
+            }
+
+            if (start != null) {
+                predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("timestamp"), start));
+            }
+
+            if (end != null) {
+                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("timestamp"), end));
+            }
+
+            return predicate;
+        };
+
+        try {
+            return repository.findAll(spec, pageable).map(this::toDTO);
+        } catch (Exception e) {
+            log.error("Erro ao buscar registros de auditoria do sistema", e);
+            throw new RuntimeException("Erro ao buscar registros de auditoria. Tente novamente ou contate o suporte.");
+        }
     }
 
     private SystemAuditLogDTO toDTO(SystemAuditLog log) {

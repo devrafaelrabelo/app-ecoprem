@@ -11,10 +11,12 @@ import com.ecoprem.entity.user.User;
 import com.ecoprem.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.UUID;
 
+@Service
 public class UserRoleService {
 
     private UserRepository userRepository;

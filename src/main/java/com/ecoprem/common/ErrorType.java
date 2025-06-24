@@ -83,7 +83,22 @@ public enum ErrorType {
             "https://api.ecoprem.com/errors/invalid-phone",
             "Telefone inválido"
     ),
-    INTERNAL_EXTENSION_ERROR("/errors/internal-extension/not-found", "Erro no processo interno"),;
+    INTERNAL_EXTENSION_ERROR(
+            "/errors/internal-extension/not-found",
+            "Erro no processo interno"
+    ),
+    INVALID_PARAMETERS(
+            "https://api.ecoprem.com/errors/invalid-parameters",
+            "Parâmetros inválidos"
+    ),
+    UNSUPPORTED_QUERY_PARAMETER(
+            "https://api.ecoprem.com/errors/unsupported-query-parameter",
+            "Parâmetro de consulta não suportado"
+    ),
+    DATE_RANGE_INVALID(
+            "https://api.ecoprem.com/errors/invalid-date-range",
+            "Intervalo de datas inválido"
+    );;
 
 
 

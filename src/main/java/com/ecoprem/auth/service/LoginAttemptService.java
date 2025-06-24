@@ -76,4 +76,17 @@ public class LoginAttemptService {
         cache.put(key, attempts);
         return attempts;
     }
+
+    public void resetRateLimiting(String ipAddress, String email) {
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            cacheRegistry.getLoginAttemptsPerIp().invalidate(ipAddress);
+            cacheRegistry.getRefreshAttemptsPerIp().invalidate(ipAddress);
+        }
+
+        if (email != null && !email.isBlank()) {
+            cacheRegistry.getLoginAttemptsPerEmail().invalidate(email);
+        }
+
+        log.debug("🔄 Rate limiting resetado para IP: {} e Email: {}", ipAddress, email);
+    }
 }

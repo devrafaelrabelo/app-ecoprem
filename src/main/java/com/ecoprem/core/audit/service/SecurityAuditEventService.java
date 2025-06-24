@@ -1,10 +1,11 @@
 package com.ecoprem.core.audit.service;
 
-
 import com.ecoprem.core.audit.dto.SecurityAuditEventDTO;
 import com.ecoprem.entity.audit.SecurityAuditEvent;
 import com.ecoprem.core.audit.repository.SecurityAuditEventRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SecurityAuditEventService {
@@ -25,26 +27,39 @@ public class SecurityAuditEventService {
             LocalDateTime endDate,
             Pageable pageable
     ) {
-        Specification<SecurityAuditEvent> spec = Specification.where(null);
-
-        if (eventType != null && !eventType.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("eventType"), eventType));
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("A data final não pode ser anterior à data inicial.");
         }
 
-        if (username != null && !username.isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("username")), "%" + username.toLowerCase() + "%"));
-        }
+        Specification<SecurityAuditEvent> spec = (root, query, cb) -> {
+            Predicate predicate = cb.conjunction();
 
-        if (startDate != null) {
-            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("timestamp"), startDate));
-        }
+            if (eventType != null && !eventType.isBlank()) {
+                predicate = cb.and(predicate, cb.equal(root.get("eventType"), eventType));
+            }
 
-        if (endDate != null) {
-            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("timestamp"), endDate));
-        }
+            if (username != null && !username.isBlank()) {
+                predicate = cb.and(predicate,
+                        cb.like(cb.lower(root.get("username")), "%" + username.toLowerCase() + "%"));
+            }
 
-        return securityAuditEventRepository.findAll(spec, pageable).map(this::toDTO);
+            if (startDate != null) {
+                predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("timestamp"), startDate));
+            }
+
+            if (endDate != null) {
+                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("timestamp"), endDate));
+            }
+
+            return predicate;
+        };
+
+        try {
+            return securityAuditEventRepository.findAll(spec, pageable).map(this::toDTO);
+        } catch (Exception ex) {
+            log.error("Erro ao buscar eventos de segurança auditados", ex);
+            throw new RuntimeException("Erro ao buscar eventos de segurança auditados. Tente novamente ou contate o suporte.");
+        }
     }
 
     private SecurityAuditEventDTO toDTO(SecurityAuditEvent event) {
