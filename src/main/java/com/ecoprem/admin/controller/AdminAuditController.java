@@ -45,10 +45,10 @@ public class AdminAuditController {
         }
     }
 
-    @PreAuthorize("hasAuthority('audit:view')")
+
     @Operation(
             summary = "Listar eventos de auditoria de segurança",
-            description = "Retorna os registros de eventos de segurança como tentativas de acesso negado, login suspeito, entre outros.",
+            description = "Retorna os registros de eventos de segurança como tentativas de acesso negado, logins suspeitos, entre outros.",
             parameters = {
                     @Parameter(name = "eventType", description = "Tipo do evento (ex: ACCESS_DENIED, LOGIN_FAILED, etc.)", example = "ACCESS_DENIED"),
                     @Parameter(name = "username", description = "Username do usuário (filtro parcial, sem case sensitive)", example = "admin"),
@@ -58,9 +58,12 @@ public class AdminAuditController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de eventos retornada com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso")
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou datas inconsistentes"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os eventos")
     })
     @GetMapping("/security-events")
+    @PreAuthorize("hasAuthority('audit:view')")
     public Page<SecurityAuditEventDTO> listAuditEvents(
             @RequestParam(required = false) String eventType,
             @RequestParam(required = false) String username,
@@ -76,7 +79,7 @@ public class AdminAuditController {
 
     @Operation(
             summary = "Listar logs de requisições HTTP auditadas",
-            description = "Retorna os registros de requisições HTTP capturados pelo sistema, incluindo método, IP, rota acessada, status, usuário e tempo de execução.",
+            description = "Retorna os registros de requisições HTTP capturadas pelo sistema, incluindo método, IP, rota acessada, status, usuário e tempo de execução.",
             parameters = {
                     @Parameter(name = "path", description = "Rota acessada (filtro parcial, ex: /api/auth)", example = "/api/auth"),
                     @Parameter(name = "ip", description = "Endereço IP de origem", example = "192.168.0.1"),
@@ -89,7 +92,9 @@ public class AdminAuditController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de logs retornada com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso")
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou datas inconsistentes"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os registros")
     })
     @GetMapping("/request-events")
     @PreAuthorize("hasAuthority('audit:view')")
@@ -109,14 +114,13 @@ public class AdminAuditController {
         return requestAuditLogService.search(path, ip, method, username, status, start, end, pageable);
     }
 
-    @GetMapping("/system-events")
-    @PreAuthorize("hasAuthority('audit:view')")
+
     @Operation(
             summary = "Listar auditoria de ações administrativas",
             description = "Retorna ações sensíveis realizadas no sistema, como atribuição de permissões, alterações de usuários, recursos corporativos e mudanças administrativas.",
             parameters = {
-                    @Parameter(name = "action", description = "Ação realizada", example = "CREATE"),
-                    @Parameter(name = "targetEntity", description = "Entidade alvo da ação", example = "USER"),
+                    @Parameter(name = "action", description = "Ação realizada (ex: CREATE, UPDATE, DELETE)", example = "CREATE"),
+                    @Parameter(name = "targetEntity", description = "Entidade alvo da ação (ex: USER, ROLE, COMPANY)", example = "USER"),
                     @Parameter(name = "targetId", description = "ID do alvo da ação", example = "e6e28546-5601-4840-9804-f61ea2e55c4a"),
                     @Parameter(name = "performedBy", description = "Usuário que realizou a ação", example = "admin"),
                     @Parameter(name = "start", description = "Data/hora inicial no formato ISO", example = "2025-01-01T00:00:00"),
@@ -125,8 +129,12 @@ public class AdminAuditController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de eventos retornada com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso")
+            @ApiResponse(responseCode = "400", description = "Parâmetros inválidos ou datas inconsistentes"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao recurso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os eventos")
     })
+    @GetMapping("/system-events")
+    @PreAuthorize("hasAuthority('audit:view')")
     public Page<SystemAuditLogDTO> listSystemEvents(
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String targetEntity,
