@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface AdminRoleRepository extends JpaRepository<Role, UUID> {
     @EntityGraph(attributePaths = "permissions")
     Optional<Role> findById(UUID id);
+    boolean existsByNameIgnoreCase(String name);
+
 }
