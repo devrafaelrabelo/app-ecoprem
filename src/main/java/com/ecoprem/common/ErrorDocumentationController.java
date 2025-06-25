@@ -137,8 +137,13 @@ public class ErrorDocumentationController {
                         "status", 400
                 ),
                 Map.of(
-                        "type", ErrorType.ACTIVE_SESSION_NOT_FOUND.getUri(),
-                        "title", ErrorType.ACTIVE_SESSION_NOT_FOUND.getTitle(),
+                        "type", ErrorType.USERREQUEST_NOT_FOUND.getUri(),
+                        "title", ErrorType.USERREQUEST_NOT_FOUND.getTitle(),
+                        "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.OPERATION_NOT_ALLOWED.getUri(),
+                        "title", ErrorType.OPERATION_NOT_ALLOWED.getTitle(),
                         "status", 400
                 )
         );

@@ -1,10 +1,7 @@
 package com.ecoprem.common;
 
 import com.ecoprem.auth.exception.*;
-import com.ecoprem.core.exception.ConflictException;
-import com.ecoprem.core.exception.InvalidDateRangeException;
-import com.ecoprem.core.exception.PermissionNotFoundException;
-import com.ecoprem.core.exception.UnsupportedQueryParamException;
+import com.ecoprem.core.exception.*;
 import com.ecoprem.resource.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.convert.ConversionFailedException;
@@ -294,6 +291,28 @@ public class GlobalExceptionHandler {
         return buildError(
                 HttpStatus.NOT_FOUND,
                 ErrorType.ACTIVE_SESSION_NOT_FOUND,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(UserRequestNotFoundException.class)
+    public ResponseEntity<ApiError> handleUserRequestNotFound(UserRequestNotFoundException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                ErrorType.USERREQUEST_NOT_FOUND,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    @ExceptionHandler(UserRequestAlreadyProcessedException.class)
+    public ResponseEntity<ApiError> handleUserRequestAlreadyProcessed(UserRequestAlreadyProcessedException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.CONFLICT,
+                ErrorType.OPERATION_NOT_ALLOWED,
                 ex.getMessage(),
                 request.getRequestURI(),
                 null

@@ -1,6 +1,8 @@
 package com.ecoprem.admin.service;
 
 import com.ecoprem.auth.dto.RegisterRequest;
+import com.ecoprem.core.exception.UserRequestAlreadyProcessedException;
+import com.ecoprem.core.exception.UserRequestNotFoundException;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.auth.exception.EmailAlreadyExistsException;
@@ -62,10 +64,10 @@ public class AdminUserService {
     @Transactional
     public void createUserFromRequest(UUID requestId, CreateUserFromRequestDTO dto, User adminUser) {
         UserRequest request = userRequestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Solicitação não encontrada"));
+                .orElseThrow(() -> new UserRequestNotFoundException("Solicitação não encontrada"));
 
         if (request.getStatus() != UserRequestStatus.PENDING) {
-            throw new IllegalStateException("Solicitação já processada.");
+            throw new UserRequestAlreadyProcessedException("Solicitação já processada.");
         }
 
         List<Role> roles = roleRepository.findByNameIn(dto.getRoles());

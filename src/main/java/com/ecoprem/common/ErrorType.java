@@ -102,6 +102,14 @@ public enum ErrorType {
     ACTIVE_SESSION_NOT_FOUND(
             "https://api.ecoprem.com/errors/active-session-not-found",
             "Sessão ativa não encontrada"
+    ),
+    USERREQUEST_NOT_FOUND(
+            "https://api.ecoprem.com/errors/userrequest-not-found",
+            "Solicitação de usuário não encontrada"
+    ),
+    OPERATION_NOT_ALLOWED(
+            "https://api.ecoprem.com/errors/operation-not-allowed",
+            "Operação não permitida"
     );
 
 
