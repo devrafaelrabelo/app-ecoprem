@@ -288,4 +288,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleInvalidDateFormat(Exception ex, HttpServletRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_PARAMETERS, ex.getMessage(),request.getRequestURI(),null);
     }
+
+    @ExceptionHandler(ActiveSessionNotFoundException.class)
+    public ResponseEntity<ApiError> handleActiveSessionNotFound(ActiveSessionNotFoundException ex, HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                ErrorType.ACTIVE_SESSION_NOT_FOUND,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
 }

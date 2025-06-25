@@ -98,7 +98,11 @@ public enum ErrorType {
     DATE_RANGE_INVALID(
             "https://api.ecoprem.com/errors/invalid-date-range",
             "Intervalo de datas inválido"
-    );;
+    ),
+    ACTIVE_SESSION_NOT_FOUND(
+            "https://api.ecoprem.com/errors/active-session-not-found",
+            "Sessão ativa não encontrada"
+    );
 
 
 

@@ -53,33 +53,33 @@ public class UserService {
         userRepository.save(newUser);
     }
 
-    private User buildNewUser(RegisterRequest request, List<Role> roles, List<Department> departments,
+    private User buildNewUser(RegisterRequest request,
+                              List<Role> roles,
+                              List<Department> departments,
                               List<UserGroup> userGroups) {
-
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
 
         String fullName = (request.getFullName() != null && !request.getFullName().isBlank())
                 ? request.getFullName()
                 : request.getFirstName() + " " + request.getLastName();
-        user.setFullName(fullName);
 
-        user.setSocialName(request.getSocialName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles((Set<Role>) roles);
-        user.setDepartments((Set<Department>) departments);
-        user.setUserGroups((Set<UserGroup>) userGroups);
-        user.setEmailVerified(false);
-        user.setFirstLogin(true);
-        user.setNotificationsEnabled(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-
-        return user;
+        return User.builder()
+                .id(UUID.randomUUID())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .fullName(fullName)
+                .socialName(request.getSocialName())
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .roles(new HashSet<>(roles))
+                .departments(new HashSet<>(departments))
+                .userGroups(new HashSet<>(userGroups))
+                .emailVerified(false)
+                .firstLogin(true)
+                .notificationsEnabled(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     private void validateEmailAndUsernameUniqueness(RegisterRequest request) {

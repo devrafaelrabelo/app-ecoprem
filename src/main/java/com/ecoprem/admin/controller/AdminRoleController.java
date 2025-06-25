@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class AdminRoleController {
             @ApiResponse(responseCode = "200", description = "Roles retrieved successfully")
     })
     @GetMapping
+    @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<List<AdminRoleDTO>> listAll() {
         return ResponseEntity.ok(adminRoleService.findAll());
     }
@@ -38,6 +40,7 @@ public class AdminRoleController {
             @ApiResponse(responseCode = "404", description = "Role not found", content = @Content)
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:read')")
     public ResponseEntity<AdminRoleResponseDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(adminRoleService.findById(id));
     }
@@ -51,6 +54,7 @@ public class AdminRoleController {
             @ApiResponse(responseCode = "400", description = "Invalid data or role already exists", content = @Content)
     })
     @PostMapping
+    @PreAuthorize("hasAuthority('role:create')")
     public ResponseEntity<AdminRoleResponseDTO> create(
             @Valid @RequestBody AdminRoleCreateUpdateDTO dto) {
         return ResponseEntity.ok(adminRoleService.create(dto));
@@ -63,6 +67,7 @@ public class AdminRoleController {
             @ApiResponse(responseCode = "404", description = "Role not found", content = @Content)
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:update')")
     public ResponseEntity<AdminRoleResponseDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody AdminRoleCreateUpdateDTO dto) {
@@ -75,6 +80,7 @@ public class AdminRoleController {
             @ApiResponse(responseCode = "404", description = "Role not found", content = @Content)
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('role:delete')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         adminRoleService.delete(id);
         return ResponseEntity.noContent().build();

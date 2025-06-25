@@ -135,8 +135,12 @@ public class ErrorDocumentationController {
                         "type", ErrorType.DATE_RANGE_INVALID.getUri(),
                         "title", ErrorType.DATE_RANGE_INVALID.getTitle(),
                         "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.ACTIVE_SESSION_NOT_FOUND.getUri(),
+                        "title", ErrorType.ACTIVE_SESSION_NOT_FOUND.getTitle(),
+                        "status", 400
                 )
-
         );
     }
 }

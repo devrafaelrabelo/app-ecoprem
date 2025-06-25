@@ -63,7 +63,7 @@ public class AdminAuditController {
             @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os eventos")
     })
     @GetMapping("/security-events")
-    @PreAuthorize("hasAuthority('audit:view')")
+    @PreAuthorize("hasAuthority('audit:read')")
     public Page<SecurityAuditEventDTO> listAuditEvents(
             @RequestParam(required = false) String eventType,
             @RequestParam(required = false) String username,
@@ -97,7 +97,7 @@ public class AdminAuditController {
             @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os registros")
     })
     @GetMapping("/request-events")
-    @PreAuthorize("hasAuthority('audit:view')")
+    @PreAuthorize("hasAuthority('audit:read')")
     public Page<RequestAuditLogDTO> listRequestLogs(
             @RequestParam(required = false) String path,
             @RequestParam(required = false) String ip,
@@ -134,7 +134,7 @@ public class AdminAuditController {
             @ApiResponse(responseCode = "500", description = "Erro interno ao buscar os eventos")
     })
     @GetMapping("/system-events")
-    @PreAuthorize("hasAuthority('audit:view')")
+    @PreAuthorize("hasAuthority('audit:read')")
     public Page<SystemAuditLogDTO> listSystemEvents(
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String targetEntity,

@@ -7,13 +7,20 @@ import com.ecoprem.auth.exception.EmailAlreadyExistsException;
 import com.ecoprem.auth.exception.RoleNotFoundException;
 import com.ecoprem.auth.exception.UsernameAlreadyExistsException;
 import com.ecoprem.auth.repository.RoleRepository;
+import com.ecoprem.entity.user.UserRequest;
+import com.ecoprem.enums.UserRequestStatus;
+import com.ecoprem.user.dto.CreateUserFromRequestDTO;
 import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.auth.service.ActivityLogService;
+import com.ecoprem.user.repository.UserRequestRepository;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +36,7 @@ public class AdminUserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final ActivityLogService activityLogService;
+    private final UserRequestRepository userRequestRepository;
 
     public void createUserByAdmin(RegisterRequest request, User adminUser) {
         validateUserCreation(request);
@@ -48,6 +56,49 @@ public class AdminUserService {
                 adminUser,
                 "Created new user: " + newUser.getUsername() + " (" + newUser.getEmail() + ")",
                 newUser
+        );
+    }
+
+    @Transactional
+    public void createUserFromRequest(UUID requestId, CreateUserFromRequestDTO dto, User adminUser) {
+        UserRequest request = userRequestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Solicitação não encontrada"));
+
+        if (request.getStatus() != UserRequestStatus.PENDING) {
+            throw new IllegalStateException("Solicitação já processada.");
+        }
+
+        List<Role> roles = roleRepository.findByNameIn(dto.getRoles());
+        if (roles.size() != dto.getRoles().size()) {
+            throw new RoleNotFoundException("Algumas roles informadas não existem: " + dto.getRoles());
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .fullName(request.getFirstName() + " " + request.getLastName())
+                .cpf(request.getCpf())
+                .birthDate(request.getBirthDate())
+                .username(dto.getUsername())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .managerId(request.getSupervisorId())
+                .roles(new HashSet<>(roles))
+                .build();
+
+        // Associar departamentos, posição, grupos se necessário
+        // Exemplo:
+        // if (dto.getDepartmentIds() != null) { ... }
+
+        userRepository.save(user);
+
+        request.setStatus(UserRequestStatus.APPROVED);
+        userRequestRepository.save(request);
+
+        activityLogService.logAdminAction(
+                adminUser,
+                "Criou usuário a partir de solicitação: " + user.getUsername(),
+                user
         );
     }
 
@@ -73,21 +124,21 @@ public class AdminUserService {
     }
 
     private User buildUserFromRequest(RegisterRequest request, List<Role> roles) {
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setFullName(request.getFullName() != null
-                ? request.getFullName()
-                : request.getFirstName() + " " + request.getLastName());
-        user.setSocialName(request.getSocialName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles((Set<Role>) roles); // ← agora usando lista
-        user.setEmailVerified(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        return user;
+        return User.builder()
+                .id(UUID.randomUUID())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .fullName(request.getFullName() != null
+                        ? request.getFullName()
+                        : request.getFirstName() + " " + request.getLastName())
+                .socialName(request.getSocialName())
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .roles(new HashSet<>(roles))
+                .emailVerified(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.ecoprem.entity.user;
 
 import com.ecoprem.entity.auth.Function;
 import com.ecoprem.entity.auth.Position;
+import com.ecoprem.entity.common.Address;
 import com.ecoprem.entity.common.AllocationHistory;
 import com.ecoprem.entity.common.Department;
 import com.ecoprem.entity.communication.CorporatePhone;
@@ -10,19 +11,24 @@ import com.ecoprem.entity.communication.PersonalPhone;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.security.UserPermission;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Entity
+
 @Table(name = "users")
-@Data
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED, force = true) // 👈 necessário para o Hibernate
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(name = "first_name", nullable = false)
@@ -188,7 +194,7 @@ public class User {
     private Set<AllocationHistory> allocationHistories = new HashSet<>();
 
     @OneToMany(mappedBy = "currentUser")
-    private Set<InternalExtension> currentInternalExtensions = new HashSet<>();;
+    private Set<InternalExtension> currentInternalExtensions = new HashSet<>();
 
     @OneToMany(mappedBy = "currentUser")
     private Set<CorporatePhone> currentCorporatePhones = new HashSet<>();;
@@ -203,4 +209,8 @@ public class User {
                 ", fullName='" + fullName + '\'' +
                 '}';
     }
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Address> addresses = new ArrayList<>();
+
 }

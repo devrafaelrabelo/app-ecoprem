@@ -29,7 +29,7 @@ public class AdminUserRoleController {
     private final UserRoleService userRoleService;
 
     @PostMapping("/assign")
-    @PreAuthorize("hasAuthority('role:assign')")
+        @PreAuthorize("hasAuthority('role:assign')")
     @Operation(
             summary = "Atribuir papel a um usuário",
             description = "Associa um papel (role) a um usuário do sistema. Requer autoridade 'role:assign'."

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "200", description = "Lista de permissões retornada com sucesso")
     })
     @GetMapping
+    @PreAuthorize("hasAuthority('permission:read')")
     public ResponseEntity<List<AdminPermissionDTO>> listAll() {
         return ResponseEntity.ok(adminPermissionService.findAll());
     }
@@ -36,6 +38,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "404", description = "Permissão não encontrada", content = @Content)
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('permission:read')")
     public ResponseEntity<AdminPermissionDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(adminPermissionService.findById(id));
     }
@@ -49,6 +52,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou nome já existente", content = @Content)
     })
     @PostMapping
+    @PreAuthorize("hasAuthority('permission:create')")
     public ResponseEntity<AdminPermissionDTO> create(
             @Valid @RequestBody AdminPermissionDTO dto) {
         return ResponseEntity.ok(adminPermissionService.create(dto));
@@ -61,6 +65,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "404", description = "Permissão não encontrada", content = @Content)
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('permission:update')")
     public ResponseEntity<AdminPermissionDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody AdminPermissionDTO dto) {
@@ -73,6 +78,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "404", description = "Permissão não encontrada", content = @Content)
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('permission:delete')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         adminPermissionService.delete(id);
         return ResponseEntity.noContent().build();
@@ -86,6 +92,7 @@ public class AdminPermissionController {
             @ApiResponse(responseCode = "200", description = "Lista de permissões retornada com sucesso")
     })
     @GetMapping("/search")
+    @PreAuthorize("hasAuthority('permission:read')")
     public ResponseEntity<List<AdminPermissionDTO>> searchByName(@RequestParam String name) {
         return ResponseEntity.ok(adminPermissionService.searchByName(name));
     }

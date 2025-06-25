@@ -54,13 +54,13 @@ public class AuthServiceTestBase {
     }
 
     protected User createVerifiedUser() {
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setEmail(testEmail);
-        user.setEmailVerified(true);
-        user.setAccountLocked(false);
-        user.setLoginAttempts(0);
-        return user;
+        return User.builder()
+                .id(UUID.randomUUID())
+                .email(testEmail)
+                .emailVerified(true)
+                .accountLocked(false)
+                .loginAttempts(0)
+                .build();
     }
 
     protected LoginRequest createLoginRequest() {

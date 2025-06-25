@@ -24,6 +24,15 @@ public class RevokedToken {
     @Column(name = "revoked_at", nullable = false)
     private LocalDateTime revokedAt;
 
+    @Column(name = "session_id")
+    private String sessionId;
+
+    @Column(name = "reason")
+    private String reason;
+
+    @Column(name = "revoked_by")
+    private String revokedBy;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
