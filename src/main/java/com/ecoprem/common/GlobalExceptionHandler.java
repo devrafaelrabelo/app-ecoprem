@@ -3,6 +3,7 @@ package com.ecoprem.common;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.core.exception.*;
 import com.ecoprem.resource.exception.*;
+import com.sun.jdi.request.InvalidRequestStateException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
@@ -317,5 +318,15 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 null
         );
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<ApiError> handleForbiddenOperation(Exception ex, HttpServletRequest request) {
+        return buildError(HttpStatus.FORBIDDEN, ErrorType.FORBIDDEN_OPERATION, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(InvalidRequestStateException.class)
+    public ResponseEntity<ApiError> handleInvalidState(Exception ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, ErrorType.INVALID_STATE, ex.getMessage(), request.getRequestURI(), null);
     }
 }

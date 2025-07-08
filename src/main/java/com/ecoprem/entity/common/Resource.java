@@ -76,19 +76,23 @@ public class Resource {
     @JoinColumn(name = "resource_type_id", nullable = false)
     private ResourceType resourceType;
 
+    @Builder.Default
     @OneToMany(mappedBy = "resource", cascade = CascadeType.ALL)
     private List<AllocationHistory> allocationHistory = new ArrayList<>();
 
     // === Flags e status lógicos ===
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean availableForUse = true;
 
     // === Campos de auditoria ===
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 

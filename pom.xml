@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.ecoprem</groupId>
-	<artifactId>ecoprem-backend</artifactId>
+	<artifactId>backend_appgestaoti</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ecoprem-backend</name>
 	<description>Backend completo para o sistema EcoPrem</description>

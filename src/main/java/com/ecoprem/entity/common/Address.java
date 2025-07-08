@@ -27,6 +27,8 @@ public class Address {
 
     private String city;
 
+    private String neighborhood;
+
     private String state;
 
     private String country;

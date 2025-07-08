@@ -1,6 +1,7 @@
 package com.ecoprem.entity.user;
 
 import com.ecoprem.enums.UserRequestStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -58,10 +59,26 @@ public class UserRequest {
     private String city;
 
     @Column(nullable = false)
+    private String neighborhood;
+
+    @Column(nullable = false)
     private String state;
+
+    @ManyToOne
+    @JoinColumn(name = "requester_id")
+    private User requester;
 
     @Enumerated(EnumType.STRING)
     private UserRequestStatus status;
 
     private LocalDateTime requestedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = true) // permitir null
+    private User createdBy;
+
+    @Column(name = "created_at", nullable = true) // permitir null
+    private LocalDateTime createdAt;
+
+
 }

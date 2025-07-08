@@ -145,6 +145,16 @@ public class ErrorDocumentationController {
                         "type", ErrorType.OPERATION_NOT_ALLOWED.getUri(),
                         "title", ErrorType.OPERATION_NOT_ALLOWED.getTitle(),
                         "status", 400
+                ),
+                Map.of(
+                        "type", ErrorType.FORBIDDEN_OPERATION.getUri(),
+                        "title", ErrorType.FORBIDDEN_OPERATION.getTitle(),
+                        "status", 403
+                ),
+                Map.of(
+                        "type", ErrorType.INVALID_STATE.getUri(),
+                        "title", ErrorType.INVALID_STATE.getTitle(),
+                        "status", 400
                 )
         );
     }

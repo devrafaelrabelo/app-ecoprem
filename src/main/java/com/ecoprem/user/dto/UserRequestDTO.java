@@ -39,6 +39,9 @@ public class UserRequestDTO {
     @NotBlank
     private String number;
 
+    @NotBlank
+    private String neighborhood;
+
     private String complement;
 
     @NotBlank

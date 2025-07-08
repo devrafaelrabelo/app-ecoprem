@@ -1,9 +1,12 @@
 package com.ecoprem.admin.controller;
 
+import com.ecoprem.admin.dto.AdminUserResponseDTO;
 import com.ecoprem.auth.dto.RegisterRequest;
 import com.ecoprem.entity.user.User;
 import com.ecoprem.admin.service.AdminUserService;
 import com.ecoprem.user.dto.CreateUserFromRequestDTO;
+import com.ecoprem.user.dto.UserBasicDTO;
+import com.ecoprem.user.dto.UserDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -15,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Tag(
@@ -27,6 +31,12 @@ import java.util.UUID;
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
+
+    @GetMapping
+    @PreAuthorize("hasAuthority('user:read')")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminUserService.findAll());
+    }
 
     @Operation(
             summary = "Criar novo usuário",
@@ -67,9 +77,5 @@ public class AdminUserController {
         return ResponseEntity.ok("Usuário criado com sucesso.");
     }
 
-//    @GetMapping("/list")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<List<AdminUserResponseDTO>> listUsers() {
-//        return ResponseEntity.ok(adminUserService.getAllUsers());
-//    }
+
 }

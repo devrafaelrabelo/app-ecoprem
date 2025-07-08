@@ -5,6 +5,7 @@ import com.ecoprem.entity.auth.Position;
 import com.ecoprem.entity.common.Address;
 import com.ecoprem.entity.common.AllocationHistory;
 import com.ecoprem.entity.common.Department;
+import com.ecoprem.entity.common.SubTeam;
 import com.ecoprem.entity.communication.CorporatePhone;
 import com.ecoprem.entity.communication.InternalExtension;
 import com.ecoprem.entity.communication.PersonalPhone;
@@ -141,6 +142,15 @@ public class User {
 
     // RELACIONAMENTOS
 
+    @ManyToOne
+    @JoinColumn(name = "requested_by_id")
+    private User requestedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
+    @Builder.Default
     @ToString.Exclude
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -154,6 +164,8 @@ public class User {
     @JoinColumn(name = "status_id")
     private UserStatus status;
 
+
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "user_department",
@@ -162,6 +174,7 @@ public class User {
     )
     private Set<Department> departments = new HashSet<>();
 
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "user_user_group",
@@ -174,6 +187,8 @@ public class User {
     @JoinColumn(name = "position_id")
     private Position position;
 
+
+    @Builder.Default
     @ManyToMany
     @JoinTable(
             name = "user_function",
@@ -182,6 +197,7 @@ public class User {
     )
     private Set<Function> functions = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPermission> userPermissions = new ArrayList<>();
 
@@ -190,12 +206,15 @@ public class User {
     @Column(name = "phone_number")
     private List<String> personalPhoneNumbers;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AllocationHistory> allocationHistories = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "currentUser")
     private Set<InternalExtension> currentInternalExtensions = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "currentUser")
     private Set<CorporatePhone> currentCorporatePhones = new HashSet<>();;
 
@@ -210,7 +229,11 @@ public class User {
                 '}';
     }
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> addresses = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "users")
+    private List<SubTeam> subTeams;
 
 }

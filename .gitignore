@@ -35,6 +35,6 @@ build/
 /target
 /.idea
 *.iml
-.env
+.env*
 application.yml
 application-*.yml

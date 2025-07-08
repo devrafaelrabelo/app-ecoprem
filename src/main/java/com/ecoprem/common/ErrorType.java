@@ -110,8 +110,15 @@ public enum ErrorType {
     OPERATION_NOT_ALLOWED(
             "https://api.ecoprem.com/errors/operation-not-allowed",
             "Operação não permitida"
+    ),
+    FORBIDDEN_OPERATION(
+            "https://api.ecoprem.com/errors/forbidden-operation",
+            "Operação proibida"
+    ),
+    INVALID_STATE(
+            "https://api.ecoprem.com/errors/invalid-state",
+            "Estado inválido fornecido"
     );
-
 
 
     private final String uri;

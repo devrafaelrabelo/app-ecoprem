@@ -48,13 +48,11 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/register",
                                 "/api/auth/DevTest",
                                 "/api/health",
                                 "/api/auth/login",
                                 "/api/auth/2fa/validate-login",
                                 "/api/auth/logout",
-                                "/api/auth/refresh",
                                 "/api/auth/session",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"

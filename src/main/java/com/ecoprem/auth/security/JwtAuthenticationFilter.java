@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -45,11 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+
+
         String path = request.getServletPath();
-        log.debug("Intercepted request path: {}", path);
+        log.info("Intercepted request path: {}", path);
 
         if (authPathProperties.getPublicPaths().contains(path)) {
-            log.debug("🔓 Skipping auth for public path: {}", path);
+            log.info("🔓 Skipping auth for public path: {}", path);
             filterChain.doFilter(request, response);
             return;
         }
@@ -64,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!jwtTokenProvider.isTokenValid(token)) {
-            log.debug("Invalid JWT token.");
+            log.info("Invalid JWT token.");
             filterChain.doFilter(request, response);
             return;
         }
@@ -77,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String sessionId = jwtTokenProvider.getSessionIdFromJWT(token);
-            log.debug("Validating sessionId: {}", sessionId);
+            log.info("Validating sessionId: {}", sessionId);
 
             activeSessionRepository.findBySessionId(sessionId).ifPresentOrElse(session -> {
                 LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
@@ -90,10 +93,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new AuthenticationException("Sessão inválida.");
             });
 
-            log.debug("Token and session are valid. Proceeding with authentication.");
+            log.info("Token and session are valid. Proceeding with authentication.");
             sessionAuthenticationProcessor.authenticateFromToken(token, request, response);
+
+            log.info("Auth no contexto: {}", SecurityContextHolder.getContext().getAuthentication());
         } catch (AuthenticationException ex) {
-            log.warn("Authentication failed: {}", ex.getMessage());
+            log.info("Authentication failed: {}", ex.getMessage());
             respondUnauthorized(response, ex.getMessage());
             return;
         }

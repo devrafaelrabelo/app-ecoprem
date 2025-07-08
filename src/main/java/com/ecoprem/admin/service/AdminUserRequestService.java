@@ -1,17 +1,14 @@
-package com.ecoprem.user.service;
+package com.ecoprem.admin.service;
 
-import com.ecoprem.core.exception.ForbiddenOperationException;
-import com.ecoprem.core.exception.InvalidRequestStateException;
 import com.ecoprem.entity.user.User;
+import com.ecoprem.entity.user.UserRequest;
+import com.ecoprem.enums.UserRequestStatus;
 import com.ecoprem.user.dto.UserRequestDTO;
 import com.ecoprem.user.dto.UserRequestDetailsDTO;
 import com.ecoprem.user.dto.UserRequestListDTO;
-import com.ecoprem.entity.user.UserRequest;
-import com.ecoprem.enums.UserRequestStatus;
 import com.ecoprem.user.repository.UserRequestRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +17,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserRequestService {
+public class AdminUserRequestService {
 
     private final UserRequestRepository userRequestRepository;
 
@@ -44,10 +40,12 @@ public class UserRequestService {
                 .supervisorId(UUID.fromString(dto.getSupervisorId()))
                 .leaderId(UUID.fromString(dto.getLeaderId()))
                 .cep(dto.getCep())
-                .street(dto.getStreet())
                 .neighborhood(dto.getNeighborhood())
+                .street(dto.getStreet())
                 .number(dto.getNumber())
                 .complement(dto.getComplement())
+                .createdAt(LocalDateTime.now()) // ✅ ESSENCIAL
+                .createdBy(requester)            // ✅ se aplicável
                 .city(dto.getCity())
                 .state(dto.getState())
                 .status(UserRequestStatus.PENDING)
@@ -72,15 +70,9 @@ public class UserRequestService {
                 .toList();
     }
 
-    public UserRequestDetailsDTO getRequestById(UUID requestId, User requester) {
+    public UserRequestDetailsDTO getRequestById(UUID requestId) {
         UserRequest request = userRequestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Solicitação não encontrada com ID: " + requestId));
-
-        if (!request.getRequester().getId().equals(requester.getId())) {
-            throw new SecurityException("Você não tem permissão para visualizar esta solicitação.");
-        }
-
-        System.out.println("Request found: " + request.getRequester().getUsername());
 
         return UserRequestDetailsDTO.builder()
                 .id(request.getId())
@@ -99,62 +91,9 @@ public class UserRequestService {
                 .city(request.getCity())
                 .state(request.getState())
                 .requestedAt(String.valueOf(request.getRequestedAt()))
-                .requestedName(request.getRequester().getUsername())
+                .requestedName(request.getRequester() != null ? request.getRequester().getUsername() : null)
                 .createdAt(String.valueOf(request.getCreatedAt()))
                 .createdBy(request.getCreatedBy() != null ? request.getCreatedBy().getUsername() : null)
-                .build();
-
-    }
-
-    public List<UserRequestListDTO> listRequestsByRequester(User requester) {
-        return userRequestRepository.findByRequester(requester)
-                .stream()
-                .map(this::toListDTO)
-                .toList();
-    }
-
-    @Transactional
-    public void deleteOwnRequest(UUID requestId, User requester) {
-        UserRequest request = userRequestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Solicitação não encontrada com ID: " + requestId));
-
-        if (!request.getRequester().getId().equals(requester.getId())) {
-            throw new ForbiddenOperationException("Você só pode excluir solicitações que você criou.");
-        }
-
-        if (request.getStatus() != UserRequestStatus.PENDING) {
-            throw new InvalidRequestStateException("Apenas solicitações pendentes podem ser excluídas.");
-        }
-
-        userRequestRepository.delete(request);
-    }
-
-    @Transactional
-    public void deleteOwnRequests(List<UUID> ids, User requester) {
-        List<UserRequest> requests = userRequestRepository.findAllById(ids);
-
-        for (UserRequest request : requests) {
-            if (!request.getRequester().getId().equals(requester.getId())) {
-                throw new ForbiddenOperationException("Você só pode excluir solicitações que você criou.");
-            }
-
-            if (request.getStatus() != UserRequestStatus.PENDING) {
-                throw new InvalidRequestStateException("Todas as solicitações devem estar pendentes para serem excluídas.");
-            }
-        }
-
-        userRequestRepository.deleteAll(requests);
-    }
-
-    private UserRequestListDTO toListDTO(UserRequest req) {
-        return UserRequestListDTO.builder()
-                .id(req.getId())
-                .cpf(req.getCpf())
-                .firstName(req.getFirstName())
-                .lastName(req.getLastName())
-                .phone(req.getPhone())
-                .status(req.getStatus())
-                .requestedAt(req.getRequestedAt())
                 .build();
     }
 

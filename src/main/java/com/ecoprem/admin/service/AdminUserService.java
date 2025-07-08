@@ -12,10 +12,10 @@ import com.ecoprem.auth.repository.RoleRepository;
 import com.ecoprem.entity.user.UserRequest;
 import com.ecoprem.enums.UserRequestStatus;
 import com.ecoprem.user.dto.CreateUserFromRequestDTO;
+import com.ecoprem.user.dto.UserDTO;
 import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.auth.service.ActivityLogService;
 import com.ecoprem.user.repository.UserRequestRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,8 +24,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.ecoprem.auth.util.ValidationUtil.isStrongPassword;
 import static com.ecoprem.auth.util.ValidationUtil.isValidEmail;
@@ -39,6 +39,13 @@ public class AdminUserService {
     private final PasswordEncoder passwordEncoder;
     private final ActivityLogService activityLogService;
     private final UserRequestRepository userRequestRepository;
+
+    public List<UserDTO> findAll() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(UserDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
 
     public void createUserByAdmin(RegisterRequest request, User adminUser) {
         validateUserCreation(request);
@@ -84,6 +91,8 @@ public class AdminUserService {
                 .username(dto.getUsername())
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
+                .requestedBy(request.getRequester()) // quem solicitou
+                .createdBy(adminUser)
                 .managerId(request.getSupervisorId())
                 .roles(new HashSet<>(roles))
                 .build();
@@ -94,7 +103,9 @@ public class AdminUserService {
 
         userRepository.save(user);
 
-        request.setStatus(UserRequestStatus.APPROVED);
+        request.setCreatedAt(LocalDateTime.now());
+        request.setCreatedBy(adminUser);
+        request.setStatus(UserRequestStatus.CREATED);
         userRequestRepository.save(request);
 
         activityLogService.logAdminAction(
@@ -143,4 +154,6 @@ public class AdminUserService {
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
+
+
 }

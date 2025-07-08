@@ -1,6 +1,7 @@
 package com.ecoprem.user.service;
 
 import com.ecoprem.auth.dto.UserPermissionDTO;
+import com.ecoprem.auth.exception.UserNotFoundException;
 import com.ecoprem.auth.repository.PermissionRepository;
 import com.ecoprem.auth.repository.UserPermissionRepository;
 import com.ecoprem.core.audit.service.SystemAuditLogService;
@@ -17,6 +18,7 @@ import com.ecoprem.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import static com.ecoprem.core.validation.ValidationUtils.*;
 import java.util.*;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.ecoprem.core.validation.ValidationUtils.requireFound;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserPermissionService {
@@ -144,8 +147,11 @@ public class UserPermissionService {
 
 
     public UserPermissionsResponse getPermissionsWithMenus(User user) {
+
         user = userRepository.findWithPermissions(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+
 
         Set<String> directPermissions = user.getUserPermissions().stream()
                 .map(up -> up.getPermission().getName())
@@ -163,27 +169,48 @@ public class UserPermissionService {
 
         List<MenuGroup> allGroups = List.of(
                 new MenuGroup("Usuários", "Users", List.of(
-                        new MenuItem("Gerenciar Usuários", "User", "/users",
-                                List.of("user:view"), List.of())
+                        new MenuItem("Gerenciar Usuários", "User", "/ti/users/dashboard",
+                                List.of("user:read"), List.of()),
+                        new MenuItem("Criar Usuários", "User", "/ti/users/create",
+                                List.of("user:read"), List.of()),
+                        new MenuItem("Solicitar Usuários", "User", "/comercial/solicitar-usuario",
+                                List.of("requestuser:read"), List.of())
                 )),
                 new MenuGroup("Recursos", "Package", List.of(
-                        new MenuItem("Recursos", "Package", "/resources",
-                                List.of("resource:view"), List.of()),
-                        new MenuItem("Tipos de Recurso", "Credit-card", "/resource-types",
-                                List.of("resourcetype:view"), List.of()),
-                        new MenuItem("Status de Recurso", "Multiple", "/resource-status",
-                                List.of("resourcestatus:view"), List.of())
+                        new MenuItem("Ativos/Passivos", "Package", "/ti/resources",
+                                List.of("resource:read"), List.of()),
+                        new MenuItem("Tipos", "Credit-card", "/ti/resource-types",
+                                List.of("resourcetype:read"), List.of()),
+                        new MenuItem("Status", "Multiple", "/ti/resource-status",
+                                List.of("resourcestatus:read"), List.of())
                 )),
+
                 new MenuGroup("Telefonia", "Phone", List.of(
-                        new MenuItem("Telefones Corporativos", "Phone", "/corporate-phones",
-                                List.of("corporate-phone:view"), List.of()),
-                        new MenuItem("Ramais Internos", "Phone-forwarded", "/internal-extensions",
-                                List.of("internal-extension:view"), List.of())
+                        new MenuItem("Corporativos", "Phone", "/ti/corporate-phones",
+                                List.of("corporate-phone:read"), List.of()),
+                        new MenuItem("Ramais", "Phone-forwarded", "/ti/internal-extensions",
+                                List.of("internal-extension:read"), List.of())
                 )),
+
                 new MenuGroup("Segurança", "Shield-check", List.of(
-                        new MenuItem("Cargos e Permissões", "Shield-check", "/roles",
-                                List.of("role:view", "permission:view"), List.of())
+                        new MenuItem("Roles", "Shield-check", "/ti/roles",
+                                List.of("role:read"), List.of()),
+                        new MenuItem("Permissões", "Shield-check", "/ti/permissions",
+                                List.of("permission:read"), List.of())
+                )),
+
+                new MenuGroup("Configurações", "Settings", List.of(
+                        new MenuItem("Configurações Gerais", "Settings", "/settings",
+                                List.of("settings:read"), List.of()),
+                        new MenuItem("Logs de Auditoria", "Shield-check", "/audit-logs",
+                                List.of("auditlog:read"), List.of())
+                )),
+
+                new MenuGroup("Solicitações", "Clipboard-list", List.of(
+                        new MenuItem("Dashboard", "Clipboard-list", "/requests",
+                                List.of("request:read"), List.of())
                 ))
+
         );
 
         // Filtra apenas menus visíveis ao usuário

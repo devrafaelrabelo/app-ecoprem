@@ -1,17 +1,15 @@
-package com.ecoprem.user.controller;
+package com.ecoprem.admin.controller;
 
+import com.ecoprem.admin.service.AdminUserRequestService;
 import com.ecoprem.entity.user.User;
-import com.ecoprem.user.dto.DeleteUserRequestsDTO;
 import com.ecoprem.user.dto.UserRequestDTO;
 import com.ecoprem.user.dto.UserRequestDetailsDTO;
 import com.ecoprem.user.dto.UserRequestListDTO;
-import com.ecoprem.user.service.UserRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,13 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @RestController
-@RequestMapping("/api/user/request")
+@RequestMapping("/api/admin/users/request")
 @RequiredArgsConstructor
-public class UserRequestController {
+public class AdminUserRequestController {
 
-    private final UserRequestService userRequestService;
+    private final AdminUserRequestService adminUserRequestService;
 
     @Operation(summary = "Registrar uma solicitação de criação de usuário")
     @ApiResponses(value = {
@@ -38,16 +35,8 @@ public class UserRequestController {
     public ResponseEntity<Void> createUserRequest(
             @AuthenticationPrincipal User requester,
             @RequestBody @Valid UserRequestDTO dto) {
-        userRequestService.createUserRequest(requester, dto);
+        adminUserRequestService.createUserRequest(requester, dto);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping
-    @Operation(summary = "Listar solicitações feitas pelo usuário autenticado")
-    @ApiResponse(responseCode = "200", description = "Lista de solicitações retornada com sucesso")
-    @PreAuthorize("hasAuthority('requestuser:read')")
-    public ResponseEntity<List<UserRequestListDTO>> getMyRequests(@AuthenticationPrincipal User requester) {
-        return ResponseEntity.ok(userRequestService.listRequestsByRequester(requester));
     }
 
     @GetMapping("/{id}")
@@ -60,27 +49,14 @@ public class UserRequestController {
     public ResponseEntity<UserRequestDetailsDTO> getRequestById(
             @PathVariable UUID id,
             @AuthenticationPrincipal User requester) {
-        return ResponseEntity.ok(userRequestService.getRequestById(id, requester));
+        return ResponseEntity.ok(adminUserRequestService.getRequestById(id));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('requestuser:delete')")
-    public ResponseEntity<Void> deleteOwnRequest(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal User requester) {
-        log.debug("Deleting user request with ID: {}", id);
-        userRequestService.deleteOwnRequest(id, requester);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/batch")
-    @PreAuthorize("hasAuthority('requestuser:delete')")
-    public ResponseEntity<Void> deleteOwnRequestsBatch(
-            @AuthenticationPrincipal User requester,
-            @RequestBody @Valid DeleteUserRequestsDTO dto) {
-
-        log.debug("Deleting user requests with IDs: {}", dto.getRequestIds());
-        userRequestService.deleteOwnRequests(dto.getRequestIds(), requester);
-        return ResponseEntity.noContent().build();
+    @Operation(summary = "Listar todas as solicitações de criação de usuário")
+    @ApiResponse(responseCode = "200", description = "Lista de solicitações retornada com sucesso")
+    @GetMapping
+    @PreAuthorize("hasAuthority('requestuser:read')")
+    public ResponseEntity<List<UserRequestListDTO>> getAllRequests() {
+        return ResponseEntity.ok(adminUserRequestService.listAllRequests());
     }
 }

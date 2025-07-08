@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -25,7 +26,11 @@ public class CreateUserFromRequestDTO {
     @NotEmpty
     private List<String> roles;
 
+    private UUID requestedById;
+
     private String positionId;
+
     private List<String> departmentIds;
+
     private List<String> groupIds;
 }
