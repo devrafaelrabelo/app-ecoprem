@@ -8,11 +8,11 @@
 		<version>3.4.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.ecoprem</groupId>
+	<groupId>com.appgestaoti</groupId>
 	<artifactId>backend_appgestaoti</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ecoprem-backend</name>
-	<description>Backend completo para o sistema EcoPrem</description>
+	<name>appgestaoti-backend</name>
+	<description>Backend completo para o sistema Gestao de TI</description>
 	<url/>
 	<licenses>
 		<license/>

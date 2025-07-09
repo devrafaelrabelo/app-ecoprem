@@ -96,7 +96,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.info("Token and session are valid. Proceeding with authentication.");
             sessionAuthenticationProcessor.authenticateFromToken(token, request, response);
 
-            log.info("Auth no contexto: {}", SecurityContextHolder.getContext().getAuthentication());
         } catch (AuthenticationException ex) {
             log.info("Authentication failed: {}", ex.getMessage());
             respondUnauthorized(response, ex.getMessage());

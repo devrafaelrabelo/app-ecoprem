@@ -23,7 +23,6 @@ public class UserPermissionController {
     @Operation(summary = "Permissões e Menus", description = "Retorna as permissões efetivas e menus disponíveis para o usuário autenticado.")
     @PreAuthorize("hasAuthority('permission:read')")
     public ResponseEntity<UserPermissionsResponse> getPermissions(@AuthenticationPrincipal User user) {
-        log.info("✅ Entrou no endpoint /api/user/permissions para o usuário: {}", user.getUsername());
         return ResponseEntity.ok(userPermissionService.getPermissionsWithMenus(user));
     }
 }
