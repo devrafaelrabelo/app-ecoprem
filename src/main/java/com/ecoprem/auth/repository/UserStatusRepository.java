@@ -1,6 +1,6 @@
 package com.ecoprem.auth.repository;
 
-import com.ecoprem.entity.user.UserStatus;
+import com.ecoprem.entity.security.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

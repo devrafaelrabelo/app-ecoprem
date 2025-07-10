@@ -3,7 +3,7 @@ package com.ecoprem.auth.service;
 import com.ecoprem.auth.exception.*;
 import com.ecoprem.user.repository.UserRepository;
 import com.ecoprem.entity.user.User;
-import com.ecoprem.entity.user.UserStatus;
+import com.ecoprem.entity.security.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

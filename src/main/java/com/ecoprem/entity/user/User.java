@@ -8,9 +8,9 @@ import com.ecoprem.entity.common.Department;
 import com.ecoprem.entity.common.SubTeam;
 import com.ecoprem.entity.communication.CorporatePhone;
 import com.ecoprem.entity.communication.InternalExtension;
-import com.ecoprem.entity.communication.PersonalPhone;
 import com.ecoprem.entity.security.Role;
 import com.ecoprem.entity.security.UserPermission;
+import com.ecoprem.entity.security.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

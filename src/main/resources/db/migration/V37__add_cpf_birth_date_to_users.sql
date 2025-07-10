@@ -1,3 +1,0 @@
-ALTER TABLE users
-ADD COLUMN cpf VARCHAR(14),
-ADD COLUMN birth_date DATE;

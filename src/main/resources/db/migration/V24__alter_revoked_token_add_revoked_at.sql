@@ -1,2 +1,0 @@
-ALTER TABLE revoked_token
-ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP NOT NULL DEFAULT now();
