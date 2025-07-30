@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS integration;
+SET search_path TO integration;
 
 CREATE TABLE IF NOT EXISTS webhook (
     id UUID PRIMARY KEY,

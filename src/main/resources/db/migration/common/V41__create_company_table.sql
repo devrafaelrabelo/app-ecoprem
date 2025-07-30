@@ -1,4 +1,4 @@
-SET search_path TO security;
+SET search_path TO common;
 
 CREATE TABLE IF NOT EXISTS company (
     id UUID PRIMARY KEY,

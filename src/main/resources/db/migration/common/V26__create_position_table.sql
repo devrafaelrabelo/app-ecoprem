@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS common;
+SET search_path TO common;
 
 CREATE TABLE IF NOT EXISTS position (
     id UUID PRIMARY KEY,

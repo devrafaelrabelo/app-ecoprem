@@ -1,4 +1,5 @@
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS communication;
+SET search_path TO communication;
 
 CREATE TABLE IF NOT EXISTS personal_phone (
     id UUID PRIMARY KEY,

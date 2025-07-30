@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS auth;
+SET search_path TO auth;
 
 CREATE TABLE IF NOT EXISTS login_history (
     id UUID PRIMARY KEY,

@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS "user";
+SET search_path TO "user";
 
 CREATE TABLE IF NOT EXISTS privacy_settings (
     id UUID PRIMARY KEY,

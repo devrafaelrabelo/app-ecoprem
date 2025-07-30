@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.appgestaoti</groupId>
-	<artifactId>backend_appgestaoti</artifactId>
+	<artifactId>appgestaoti-ControlCenter</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>appgestaoti-backend</name>
 	<description>Backend completo para o sistema Gestao de TI</description>

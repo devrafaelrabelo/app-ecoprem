@@ -1,3 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS security;
+SET search_path TO security;
+
 CREATE TABLE users (
     id UUID PRIMARY KEY,
     first_name VARCHAR(255) NOT NULL,
@@ -22,6 +25,8 @@ CREATE TABLE users (
     terms_accepted_at TIMESTAMP,
     privacy_policy_version VARCHAR(255),
     avatar VARCHAR(255),
+    cpf VARCHAR(14) UNIQUE,
+    birth_date DATE,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     first_login BOOLEAN,
@@ -37,6 +42,16 @@ CREATE TABLE users (
     two_factor_enabled BOOLEAN,
     status_id UUID,
 
+    -- Endereço embutido (Embedded Address)
+    address_street VARCHAR(100),
+    address_number VARCHAR(10),
+    address_complement VARCHAR(100),
+    address_city VARCHAR(100),
+    address_neighborhood VARCHAR(100),
+    address_state VARCHAR(100),
+    address_country VARCHAR(100),
+    address_postal_code VARCHAR(20),
+
     -- Novos campos
     requested_by_id UUID,
     created_by_id UUID,
@@ -46,3 +61,6 @@ CREATE TABLE users (
     CONSTRAINT fk_users_requested_by FOREIGN KEY (requested_by_id) REFERENCES users(id),
     CONSTRAINT fk_users_created_by FOREIGN KEY (created_by_id) REFERENCES users(id)
 );
+
+-- Índice para facilitar login por email
+CREATE INDEX IF NOT EXISTS idx_users_email ON security.users(email);

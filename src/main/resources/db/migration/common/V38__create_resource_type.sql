@@ -1,4 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS resource;
 SET search_path TO resource;
+
 
 CREATE TABLE IF NOT EXISTS resource_type (
     id UUID PRIMARY KEY,

@@ -1,7 +1,7 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS auth;
+SET search_path TO auth;
 
-CREATE TABLE IF NOT EXISTS pending2falogin (
+CREATE TABLE IF NOT EXISTS pending_2fa_login (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     temp_token VARCHAR(255) NOT NULL UNIQUE,

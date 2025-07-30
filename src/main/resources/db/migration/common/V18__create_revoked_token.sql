@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS auth;
+SET search_path TO auth;
 
 CREATE TABLE IF NOT EXISTS revoked_token (
     id UUID PRIMARY KEY,
@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS revoked_token (
     reason VARCHAR(255),
     revoked_by VARCHAR(255),
 
-    CONSTRAINT fk_revoked_token_user FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_revoked_token_user FOREIGN KEY (user_id) REFERENCES security.users(id)
 );

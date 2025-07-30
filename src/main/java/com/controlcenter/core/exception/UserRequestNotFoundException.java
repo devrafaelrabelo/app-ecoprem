@@ -1,0 +1,7 @@
+package com.controlcenter.core.exception;
+
+public class UserRequestNotFoundException extends RuntimeException {
+    public UserRequestNotFoundException(String message) {
+        super(message);
+    }
+}

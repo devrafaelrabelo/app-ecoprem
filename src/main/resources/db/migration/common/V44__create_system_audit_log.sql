@@ -1,4 +1,4 @@
-SET search_path TO security;
+SET search_path TO audit;
 
 -- ===============================
 -- Criação da tabela system_audit_log

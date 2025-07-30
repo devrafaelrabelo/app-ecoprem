@@ -1,4 +1,4 @@
-SET search_path TO security;
+SET search_path TO "user";
 
 CREATE TABLE IF NOT EXISTS user_personal_phones (
     user_id UUID NOT NULL,

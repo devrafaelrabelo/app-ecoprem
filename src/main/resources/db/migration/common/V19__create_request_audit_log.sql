@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS audit;
+SET search_path TO audit;
 
 CREATE TABLE request_audit_log (
     id BIGSERIAL PRIMARY KEY,
@@ -14,6 +14,6 @@ CREATE TABLE request_audit_log (
     user_id UUID,
     user_id_ref UUID,
 
-    CONSTRAINT fk_request_log_user FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_request_log_user FOREIGN KEY (user_id) REFERENCES security.users(id)
 );
 

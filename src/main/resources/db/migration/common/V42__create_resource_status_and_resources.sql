@@ -30,10 +30,17 @@ CREATE TABLE IF NOT EXISTS resources (
     location VARCHAR(150),
     responsible_sector VARCHAR(100),
 
-    CONSTRAINT fk_resource_company FOREIGN KEY (company_id) REFERENCES security.company(id),
+    -- ADICIONE AS COLUNAS USADAS EM FKs
+    company_id UUID,
+    current_user_id UUID,
+    resource_type_id UUID,
+    status_id UUID,
+
+    -- CONSTRAINTS APÓS AS COLUNAS EXISTIREM
+    CONSTRAINT fk_resource_company FOREIGN KEY (company_id) REFERENCES common.company(id),
     CONSTRAINT fk_resource_user FOREIGN KEY (current_user_id) REFERENCES security.users(id),
     CONSTRAINT fk_resource_type FOREIGN KEY (resource_type_id) REFERENCES resource.resource_type(id),
-    CONSTRAINT fk_resource_status FOREIGN KEY (status_id) REFERENCES resource.resource_status(id)
+    CONSTRAINT fk_resource_status FOREIGN KEY (status_id) REFERENCES resource.resource_status(id),
 
     available_for_use BOOLEAN DEFAULT TRUE,
 

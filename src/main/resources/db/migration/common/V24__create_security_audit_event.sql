@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS audit;
+SET search_path TO audit;
 
 CREATE TABLE IF NOT EXISTS security_audit_event (
     id UUID NOT NULL PRIMARY KEY,
@@ -17,5 +17,5 @@ CREATE TABLE IF NOT EXISTS security_audit_event (
     user_id_ref UUID,
 
     CONSTRAINT fk_security_audit_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES security.users(id)
 );

@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS security;
-SET search_path TO security;
+CREATE SCHEMA IF NOT EXISTS auth;
+SET search_path TO auth;
 
 CREATE TABLE IF NOT EXISTS device_token (
     id UUID PRIMARY KEY,
@@ -9,3 +9,5 @@ CREATE TABLE IF NOT EXISTS device_token (
     created_at TIMESTAMP DEFAULT NOW(),
 
     CONSTRAINT fk_device_token_user FOREIGN KEY (user_id) REFERENCES security.users(id)
+
+ );
