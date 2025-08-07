@@ -1,7 +1,7 @@
 package com.controlcenter.user.service;
 
-import com.controlcenter.core.exception.ForbiddenOperationException;
-import com.controlcenter.core.exception.InvalidRequestStateException;
+import com.controlcenter.exceptions.exception.ForbiddenOperationException;
+import com.controlcenter.exceptions.exception.InvalidRequestStateException;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.user.dto.UserRequestDTO;
 import com.controlcenter.user.dto.UserRequestDetailsDTO;

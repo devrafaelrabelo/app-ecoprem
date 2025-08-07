@@ -1,22 +1,32 @@
 package com.controlcenter.admin.service;
 
+import com.controlcenter.admin.dto.RegisterUser;
 import com.controlcenter.admin.repository.AdminUserRepository;
-import com.controlcenter.auth.dto.RegisterRequest;
-import com.controlcenter.auth.exception.UserNotFoundException;
-import com.controlcenter.core.exception.UserRequestAlreadyProcessedException;
-import com.controlcenter.core.exception.UserRequestNotFoundException;
-import com.controlcenter.entity.common.Company;
+import com.controlcenter.admin.dto.RegisterRequest;
+import com.controlcenter.auth.repository.UserGroupRepository;
+import com.controlcenter.auth.repository.UserStatusRepository;
+import com.controlcenter.common.dto.AddressDTO;
+import com.controlcenter.common.repository.DepartmentRepository;
+import com.controlcenter.common.repository.FunctionRepository;
+import com.controlcenter.common.repository.PositionRepository;
+import com.controlcenter.entity.common.Address;
+import com.controlcenter.exceptions.exception.EmailAlreadyExistsException;
+import com.controlcenter.exceptions.exception.UserNotFoundException;
+import com.controlcenter.exceptions.exception.UserRequestAlreadyProcessedException;
+import com.controlcenter.exceptions.exception.UserRequestNotFoundException;
 import com.controlcenter.entity.common.Department;
+import com.controlcenter.entity.common.Function;
 import com.controlcenter.entity.common.Position;
 import com.controlcenter.entity.security.Role;
 import com.controlcenter.entity.security.UserStatus;
 import com.controlcenter.entity.user.User;
-import com.controlcenter.auth.exception.EmailAlreadyExistsException;
-import com.controlcenter.auth.exception.RoleNotFoundException;
-import com.controlcenter.auth.exception.UsernameAlreadyExistsException;
+import com.controlcenter.exceptions.exception.RoleNotFoundException;
+import com.controlcenter.exceptions.exception.UsernameAlreadyExistsException;
 import com.controlcenter.auth.repository.RoleRepository;
+import com.controlcenter.entity.user.UserGroup;
 import com.controlcenter.entity.user.UserRequest;
 import com.controlcenter.enums.UserRequestStatus;
+import com.controlcenter.exceptions.exception.*;
 import com.controlcenter.user.dto.*;
 import com.controlcenter.user.mapper.UserMapper;
 import com.controlcenter.user.repository.UserRepository;
@@ -34,7 +44,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -51,6 +61,11 @@ public class AdminUserService {
     private final PasswordEncoder passwordEncoder;
     private final ActivityLogService activityLogService;
     private final UserRequestRepository userRequestRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserGroupRepository userGroupRepository;
+    private final FunctionRepository functionRepository;
+    private final PositionRepository positionRepository;
+    private final UserStatusRepository userStatusRepository;
 
     public List<UserDTO> findAll() {
         List<User> users = userRepository.findAll();
@@ -113,17 +128,104 @@ public class AdminUserService {
         return UserMapper.toDetailsDTO(user); // sem company
     }
 
-    public void createUserByAdmin(RegisterRequest request, User adminUser) {
+    public void createUserByAdmin(RegisterUser request, User adminUser) {
         validateUserCreation(request);
 
-        List<String> roleNames = request.getRoles(); // precisa ser List<String>
-        List<Role> roles = roleRepository.findByNameIn(roleNames);
+        // === Validações com exceções específicas ===
 
-        if (roles.size() != roleNames.size()) {
-            throw new RoleNotFoundException("Algumas roles informadas não foram encontradas: " + roleNames);
+        Set<UUID> roleIds = request.getRoleIds();
+        Set<Role> roles = new HashSet<>(roleRepository.findAllById(roleIds));
+        if (roles.size() != roleIds.size()) {
+            Set<UUID> foundIds = roles.stream().map(Role::getId).collect(Collectors.toSet());
+            roleIds.removeAll(foundIds);
+            throw new RoleNotFoundException("Roles não encontradas: " + roleIds);
         }
 
-        User newUser = buildUserFromRequest(request, roles);
+        Set<UUID> deptIds = request.getDepartmentIds();
+        Set<Department> departments = new HashSet<>(departmentRepository.findAllById(deptIds));
+        if (departments.size() != deptIds.size()) {
+            Set<UUID> found = departments.stream().map(Department::getId).collect(Collectors.toSet());
+            deptIds.removeAll(found);
+            throw new DepartmentNotFoundException("Departamentos não encontrados: " + deptIds);
+        }
+
+        Set<UUID> groupIds = request.getGroupIds();
+        Set<UserGroup> userGroups = new HashSet<>(userGroupRepository.findAllById(groupIds));
+        if (userGroups.size() != groupIds.size()) {
+            Set<UUID> found = userGroups.stream().map(UserGroup::getId).collect(Collectors.toSet());
+            groupIds.removeAll(found);
+            throw new UserGroupNotFoundException("Grupos não encontrados: " + groupIds);
+        }
+
+        Set<UUID> functionIds = request.getFunctionIds();
+        Set<Function> functions = new HashSet<>(functionRepository.findAllById(functionIds));
+        if (functions.size() != functionIds.size()) {
+            Set<UUID> found = functions.stream().map(Function::getId).collect(Collectors.toSet());
+            functionIds.removeAll(found);
+            throw new FunctionNotFoundException("Funções não encontradas: " + functionIds);
+        }
+
+        Position position = null;
+        if (request.getPositionId() != null) {
+            position = positionRepository.findById(request.getPositionId())
+                    .orElseThrow(() -> new PositionNotFoundException("Posição não encontrada: " + request.getPositionId()));
+        }
+
+        UserStatus status = null;
+        if (request.getStatusId() != null) {
+            status = userStatusRepository.findById(request.getStatusId())
+                    .orElseThrow(() -> new UserStatusNotFoundException("Status não encontrado: " + request.getStatusId()));
+        }
+
+        // Usuários relacionados
+        User createdBy = request.getCreatedById() != null ?
+                userRepository.findById(request.getCreatedById())
+                        .orElseThrow(() -> new UserNotFoundException("Usuário criador não encontrado: " + request.getCreatedById()))
+                : adminUser;
+
+        User requestedBy = request.getRequestedById() != null ?
+                userRepository.findById(request.getRequestedById())
+                        .orElseThrow(() -> new UserNotFoundException("Usuário solicitante não encontrado: " + request.getRequestedById()))
+                : null;
+
+        // === Montagem do novo usuário ===
+
+        User newUser = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .fullName(request.getFullName())
+                .socialName(request.getSocialName())
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .cpf(request.getCpf())
+                .birthDate(request.getBirthDate())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .interfaceTheme(request.getInterfaceTheme())
+                .timezone(request.getTimezone())
+                .preferredLanguage(request.getPreferredLanguage())
+                .invitationStatus(request.getInvitationStatus())
+                .avatar(request.getAvatar())
+                .origin(request.getOrigin())
+                .privacyPolicyVersion(request.getPrivacyPolicyVersion())
+                .cookieConsentStatus(request.getCookieConsentStatus())
+                .managerId(request.getManagerId())
+                .emailVerified(Boolean.TRUE.equals(request.getEmailVerified()))
+                .twoFactorEnabled(Boolean.TRUE.equals(request.getTwoFactorEnabled()))
+                .lastKnownLocation(request.getLastKnownLocation())
+                .accountSuspendedReason(request.getAccountSuspendedReason())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .createdBy(request.getCreatedById() != null ? userRepository.findById(request.getCreatedById()).orElse(null) : adminUser)
+                .requestedBy(requestedBy)
+                .roles(roles)
+                .departments(departments)
+                .userGroups(userGroups)
+                .functions(functions)
+                .position(position)
+                .status(status)
+                .personalPhoneNumbers(request.getPersonalPhoneNumbers() != null ? request.getPersonalPhoneNumbers() : Set.of())
+                .address(convertToAddress(request.getAddress()))
+                .build();
 
         userRepository.save(newUser);
 
@@ -132,6 +234,21 @@ public class AdminUserService {
                 "Created new user: " + newUser.getUsername() + " (" + newUser.getEmail() + ")",
                 newUser
         );
+    }
+
+    private Address convertToAddress(AddressDTO dto) {
+        if (dto == null) return null;
+
+        Address address = new Address();
+        address.setStreet(dto.getStreet());
+        address.setNumber(dto.getNumber());
+        address.setComplement(dto.getComplement());
+        address.setCity(dto.getCity());
+        address.setNeighborhood(dto.getNeighborhood());
+        address.setState(dto.getState());
+        address.setCountry(dto.getCountry());
+        address.setPostalCode(dto.getPostalCode());
+        return address;
     }
 
     @Transactional
@@ -184,21 +301,30 @@ public class AdminUserService {
     /**
      *  Auxiliares
      */
-    private void validateUserCreation(RegisterRequest request) {
-        if (!isValidEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Invalid email format.");
+    private void validateUserCreation(RegisterUser request) {
+        String email = request.getEmail();
+        String username = request.getUsername();
+        String password = request.getPassword();
+        String cpf = request.getCpf();
+
+        if (email == null || !isValidEmail(email)) {
+            throw new InvalidFieldException("Formato de e-mail inválido: " + email);
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException("The email is already in use.");
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException("O e-mail informado já está em uso: " + email);
         }
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new UsernameAlreadyExistsException("The username is already in use.");
+        if (userRepository.existsByUsername(username)) {
+            throw new UsernameAlreadyExistsException("O nome de usuário já está em uso: " + username);
         }
 
-        if (!isStrongPassword(request.getPassword())) {
-            throw new IllegalArgumentException("Password must be at least 8 characters, include uppercase, lowercase letters and a number.");
+        if (cpf != null && userRepository.existsByCpf(cpf)) {
+            throw new CpfAlreadyExistsException("O CPF informado já está em uso: " + cpf);
+        }
+
+        if (password == null || !isStrongPassword(password)) {
+            throw new WeakPasswordException("A senha deve conter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula e número.");
         }
     }
 

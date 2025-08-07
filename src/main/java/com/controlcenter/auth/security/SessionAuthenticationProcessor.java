@@ -1,6 +1,6 @@
 package com.controlcenter.auth.security;
 
-import com.controlcenter.auth.exception.AuthenticationException;
+import com.controlcenter.exceptions.exception.AuthenticationException;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.auth.service.ActiveSessionService;
 import com.controlcenter.auth.util.LoginMetadataExtractor;
@@ -53,7 +53,7 @@ public class SessionAuthenticationProcessor {
 
         activeSessionService.updateLastAccessIfValid(sessionId, user);
 
-        // 🔥 Novidade: carregar permissões e aplicar como authorities
+        // 🔥 Novidade: carregar permissões e aplicar como permissions
         var permissions = user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
                 .map(p -> new org.springframework.security.core.authority.SimpleGrantedAuthority(p.getName()))

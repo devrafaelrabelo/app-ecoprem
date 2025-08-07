@@ -14,7 +14,7 @@ INSERT INTO users (
 ) VALUES (
   'a1000000-0000-0000-0000-000000000001', 'Ti', 'User', 'Ti User', NULL,
   'tiuser', 'ti@empresa.com', '100.100.100-00', '1991-01-01', true,
-  '$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
+  E'$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
   false, NULL, false, NULL, 'local', 'light', 'America/Sao_Paulo', true, 0,
   '192.168.0.20', NOW(), '1.0', NULL,
   NOW(), NOW(), true, 'pt-BR', 'INVITED',

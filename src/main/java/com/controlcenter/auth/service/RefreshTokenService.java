@@ -1,9 +1,9 @@
 package com.controlcenter.auth.service;
 
-import com.controlcenter.auth.exception.RefreshTokenExpiredException;
 import com.controlcenter.auth.repository.RefreshTokenRepository;
 import com.controlcenter.entity.auth.RefreshToken;
 import com.controlcenter.entity.user.User;
+import com.controlcenter.exceptions.exception.RefreshTokenExpiredException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

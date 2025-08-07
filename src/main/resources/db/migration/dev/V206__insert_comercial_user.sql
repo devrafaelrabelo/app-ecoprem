@@ -14,7 +14,7 @@ INSERT INTO users (
 ) VALUES (
   'a1000000-0000-0000-0000-000000000003', 'Com', 'User', 'Com User', NULL,
   'comuser', 'comercial@empresa.com', '100.100.100-02', '1993-03-03', true,
-  '$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
+  E'$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
   false, NULL, false, NULL, 'local', 'light', 'America/Sao_Paulo', true, 0,
   '192.168.0.22', NOW(), '1.0', NULL,
   NOW(), NOW(), true, 'pt-BR', 'INVITED',

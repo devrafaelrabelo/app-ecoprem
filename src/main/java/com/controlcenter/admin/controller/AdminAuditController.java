@@ -6,7 +6,7 @@ import com.controlcenter.core.audit.dto.SystemAuditLogDTO;
 import com.controlcenter.core.audit.service.RequestAuditLogService;
 import com.controlcenter.core.audit.service.SecurityAuditEventService;
 import com.controlcenter.core.audit.service.SystemAuditLogService;
-import com.controlcenter.core.exception.InvalidDateRangeException;
+import com.controlcenter.exceptions.exception.InvalidDateRangeException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

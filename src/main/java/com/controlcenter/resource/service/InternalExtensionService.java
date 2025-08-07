@@ -1,14 +1,14 @@
 package com.controlcenter.resource.service;
 
-import com.controlcenter.auth.exception.UserNotFoundException;
+import com.controlcenter.exceptions.exception.UserNotFoundException;
 import com.controlcenter.common.repository.CompanyRepository;
 import com.controlcenter.entity.communication.InternalExtension;
 import com.controlcenter.entity.common.Company;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.resource.dto.InternalExtensionDTO;
-import com.controlcenter.resource.exception.CompanyNotFoundException;
-import com.controlcenter.resource.exception.InternalExtensionException;
-import com.controlcenter.resource.exception.InternalExtensionValidationException;
+import com.controlcenter.exceptions.exception.CompanyNotFoundException;
+import com.controlcenter.exceptions.exception.InternalExtensionException;
+import com.controlcenter.exceptions.exception.InternalExtensionValidationException;
 import com.controlcenter.resource.repository.InternalExtensionRepository;
 import com.controlcenter.user.repository.UserRepository;
 import jakarta.transaction.Transactional;

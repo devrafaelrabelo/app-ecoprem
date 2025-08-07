@@ -1,10 +1,11 @@
 package com.controlcenter.user.service;
 
-import com.controlcenter.auth.dto.RegisterRequest;
+import com.controlcenter.admin.dto.RegisterRequest;
 import com.controlcenter.auth.dto.SessionUserResponse;
+import com.controlcenter.common.repository.DepartmentRepository;
 import com.controlcenter.entity.security.Permission;
+import com.controlcenter.exceptions.exception.*;
 import com.controlcenter.user.dto.UserBasicDTO;
-import com.controlcenter.auth.exception.*;
 import com.controlcenter.auth.repository.*;
 import com.controlcenter.auth.service.ActiveSessionService;
 import com.controlcenter.entity.common.Department;

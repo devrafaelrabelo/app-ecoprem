@@ -10,4 +10,9 @@ INSERT INTO role (id, name, description, is_system_role) VALUES
   ('2a0fc18c-6ef0-4cb1-a625-3c5b83bb4029', 'ROLE_EXTENSION_MANAGER', 'Gerenciar ramais internos', false),
   ('bf2ed4f4-91b0-4a5b-8e52-b730d2c6dc84', 'ROLE_PERMISSION_ADMIN', 'Gerenciar permissões', true),
   ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', 'ROLE_COMPUTER_MANAGER', 'Permissão total para gerenciar máquinas e ativos de TI', false),
-  ('df1801d3-361c-4376-b315-0cfe93a97890', 'ROLE_ROLE_ADMIN', 'Gerenciar roles de usuários', false);
+  ('df1801d3-361c-4376-b315-0cfe93a97890', 'ROLE_ROLE_ADMIN', 'Gerenciar roles de usuários', false),
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', 'ROLE_POSITION_MANAGER', 'Permissões para gerenciar cargos no sistema', false),
+  ('bce3c972-4ad2-41cd-b0d4-6fc11c6b2a99', 'ROLE_COMPANY_MANAGER', 'Permissão para gerenciar empresas', false),
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', 'ROLE_DEPARTMENT_MANAGER', 'Permissões para gerenciar departamentos', false),
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', 'ROLE_FUNCTION_MANAGER', 'Permissões para gerenciar funções no sistema', false);
+

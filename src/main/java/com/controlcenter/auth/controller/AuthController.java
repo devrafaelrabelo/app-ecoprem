@@ -1,12 +1,15 @@
 package com.controlcenter.auth.controller;
 
+import com.controlcenter.admin.dto.RegisterRequest;
 import com.controlcenter.auth.config.AuthPathProperties;
 import com.controlcenter.auth.config.AuthProperties;
 import com.controlcenter.auth.dto.*;
 import com.controlcenter.auth.service.LoginFinalizerService;
+import com.controlcenter.exceptions.exception.InvalidTokenException;
+import com.controlcenter.exceptions.exception.MissingTokenException;
+import com.controlcenter.exceptions.exception.TwoFactorRequiredException;
 import com.controlcenter.user.service.UserService;
 import com.controlcenter.entity.user.User;
-import com.controlcenter.auth.exception.*;
 import com.controlcenter.auth.util.JwtCookieUtil;
 import com.controlcenter.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;

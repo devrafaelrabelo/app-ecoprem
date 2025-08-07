@@ -1,12 +1,12 @@
 package com.controlcenter.user.service;
 
 import com.controlcenter.auth.dto.UserPermissionDTO;
-import com.controlcenter.auth.exception.UserNotFoundException;
+import com.controlcenter.exceptions.exception.UserNotFoundException;
 import com.controlcenter.auth.repository.PermissionRepository;
 import com.controlcenter.auth.repository.UserPermissionRepository;
 import com.controlcenter.core.audit.service.SystemAuditLogService;
-import com.controlcenter.core.exception.ConflictException;
-import com.controlcenter.core.exception.PermissionNotFoundException;
+import com.controlcenter.exceptions.exception.ConflictException;
+import com.controlcenter.exceptions.exception.PermissionNotFoundException;
 import com.controlcenter.entity.security.Permission;
 import com.controlcenter.entity.security.Role;
 import com.controlcenter.entity.security.UserPermission;

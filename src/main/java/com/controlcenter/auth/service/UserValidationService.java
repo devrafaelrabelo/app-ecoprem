@@ -1,6 +1,9 @@
 package com.controlcenter.auth.service;
 
-import com.controlcenter.auth.exception.*;
+import com.controlcenter.exceptions.exception.AccountLockedException;
+import com.controlcenter.exceptions.exception.AccountNotActiveException;
+import com.controlcenter.exceptions.exception.AccountSuspendedException;
+import com.controlcenter.exceptions.exception.EmailNotVerifiedException;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.entity.security.UserStatus;

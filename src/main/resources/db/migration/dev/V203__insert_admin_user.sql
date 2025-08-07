@@ -106,7 +106,7 @@ INSERT INTO users (
 ) VALUES (
   '8d9e8d9f-92ab-a5b7-ff6c-889900112233', 'Admin', 'Teste', 'Admin Teste', 'Administrador',
   'adminteste', 'admin@empresa.com', '123.456.789-00', '1990-01-01', true,
-  '$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
+  E'$2a$12$EXM5g9yGl16L1G0jLcn0EunGo57X4VB4xb4.xI9Z/QWHMg0cmeNTS', NOW(),
   false, NULL, false, NULL, 'local', 'light', 'America/Sao_Paulo', true, 0,
   '192.168.0.10', NOW(), '1.0', 'https://cdn.app.com/avatar/admin.png',
   NOW(), NOW(), true, 'pt-BR', 'INVITED',

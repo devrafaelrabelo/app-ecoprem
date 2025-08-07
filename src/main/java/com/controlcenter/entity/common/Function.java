@@ -1,15 +1,22 @@
 package com.controlcenter.entity.common;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "function", schema = "common")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Function {
+
     @Id
+    @GeneratedValue
     private UUID id;
 
     @Column(nullable = false)
@@ -17,7 +24,7 @@ public class Function {
 
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
 }

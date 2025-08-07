@@ -2,7 +2,7 @@ package com.controlcenter.core.audit.service;
 
 import com.controlcenter.core.audit.dto.SystemAuditLogDTO;
 import com.controlcenter.core.audit.repository.SystemAuditLogRepository;
-import com.controlcenter.core.exception.InvalidDateRangeException;
+import com.controlcenter.exceptions.exception.InvalidDateRangeException;
 import com.controlcenter.entity.audit.SystemAuditLog;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Predicate;

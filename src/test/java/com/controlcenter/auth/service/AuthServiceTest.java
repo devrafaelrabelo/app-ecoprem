@@ -267,7 +267,7 @@
 //import com.controlcenter.auth.dto.LoginRequest;
 //import com.controlcenter.auth.dto.LoginResult;
 //import com.controlcenter.auth.exception.InvalidCredentialsException;
-//import com.controlcenter.auth.exception.TwoFactorRequiredException;
+//import com.controlcenter.exceptions.exception.TwoFactorRequiredException;
 //import com.controlcenter.auth.repository.LoginHistoryRepository;
 //import com.controlcenter.auth.repository.Pending2FALoginRepository;
 //import com.controlcenter.auth.repository.RefreshTokenRepository;

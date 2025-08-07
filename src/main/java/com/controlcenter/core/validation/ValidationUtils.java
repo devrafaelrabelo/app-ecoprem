@@ -1,6 +1,6 @@
 package com.controlcenter.core.validation;
 
-import com.controlcenter.resource.exception.ResourceNotFoundException;
+import com.controlcenter.exceptions.exception.ResourceNotFoundException;
 
 import java.util.Optional;
 import java.util.function.Supplier;

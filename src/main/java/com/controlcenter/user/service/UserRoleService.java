@@ -1,11 +1,11 @@
 package com.controlcenter.user.service;
 
 import com.controlcenter.admin.repository.AdminRoleRepository;
-import com.controlcenter.auth.exception.RoleNotFoundException;
-import com.controlcenter.auth.exception.UserNotFoundException;
+import com.controlcenter.exceptions.exception.RoleNotFoundException;
+import com.controlcenter.exceptions.exception.UserNotFoundException;
 import com.controlcenter.auth.repository.RoleRepository;
 import com.controlcenter.core.audit.service.SystemAuditLogService;
-import com.controlcenter.core.exception.ConflictException;
+import com.controlcenter.exceptions.exception.ConflictException;
 import com.controlcenter.entity.security.Role;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.user.repository.UserRepository;

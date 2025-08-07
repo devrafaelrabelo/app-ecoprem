@@ -1,8 +1,8 @@
 package com.controlcenter.user.controller;
 
+import com.controlcenter.exceptions.exception.InvalidTokenException;
 import com.controlcenter.user.dto.UserBasicDTO;
 import com.controlcenter.auth.dto.UserProfileDTO;
-import com.controlcenter.auth.exception.InvalidTokenException;
 import com.controlcenter.user.dto.ProfileDTO;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.user.service.UserService;

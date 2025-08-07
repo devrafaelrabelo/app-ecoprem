@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class AdminCompanyController {
 
     private final AdminCompanyService adminCompanyService;
 
+    @PreAuthorize("hasAuthority('company:read')")
     @GetMapping
     @Operation(summary = "Listar todas as empresas")
     @ApiResponses({
@@ -35,6 +37,7 @@ public class AdminCompanyController {
         return ResponseEntity.ok(adminCompanyService.findAll());
     }
 
+    @PreAuthorize("hasAuthority('company:read')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar empresa por ID")
     @ApiResponses({
@@ -47,6 +50,7 @@ public class AdminCompanyController {
         return ResponseEntity.ok(adminCompanyService.findById(id));
     }
 
+    @PreAuthorize("hasAuthority('company:create')")
     @PostMapping
     @Operation(
             summary = "Criar nova empresa",
@@ -84,6 +88,7 @@ public class AdminCompanyController {
         return ResponseEntity.ok(id);
     }
 
+    @PreAuthorize("hasAuthority('company:update')")
     @PutMapping("/{id}")
     @Operation(
             summary = "Atualizar dados de uma empresa",
@@ -125,6 +130,7 @@ public class AdminCompanyController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('company:delete')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Deletar empresa por ID")
     @ApiResponses({

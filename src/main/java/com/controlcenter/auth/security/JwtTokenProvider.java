@@ -38,7 +38,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
-                .claim("authorities", permissions) // ← mudou aqui
+                .claim("permissions", permissions) // ← mudou aqui
                 .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -97,8 +97,8 @@ public class JwtTokenProvider {
     public List<String> getPermissions(String token) {
         Claims claims = extractAllClaims(token);
 
-        Object authorities = claims.get("authorities");
-        if (authorities instanceof List<?> list) {
+        Object permissions = claims.get("permissions");
+        if (permissions instanceof List<?> list) {
             return list.stream()
                     .filter(Objects::nonNull)
                     .map(Object::toString)

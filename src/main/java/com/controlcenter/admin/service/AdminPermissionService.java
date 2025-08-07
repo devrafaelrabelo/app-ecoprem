@@ -2,9 +2,9 @@ package com.controlcenter.admin.service;
 
 import com.controlcenter.admin.dto.AdminPermissionDTO;
 import com.controlcenter.admin.repository.AdminPermissionRepository;
-import com.controlcenter.core.exception.DuplicatePermissionNameException;
-import com.controlcenter.core.exception.InvalidPermissionException;
-import com.controlcenter.core.exception.PermissionNotFoundException;
+import com.controlcenter.exceptions.exception.DuplicatePermissionNameException;
+import com.controlcenter.exceptions.exception.InvalidPermissionException;
+import com.controlcenter.exceptions.exception.PermissionNotFoundException;
 import com.controlcenter.entity.security.Permission;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

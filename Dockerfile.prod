@@ -1,0 +1,17 @@
+# Usar imagem base leve com JDK 21
+FROM eclipse-temurin:21-jdk-alpine
+
+# Diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copia apenas o .jar compilado
+COPY target/*.jar app.jar
+
+# Expor a porta padrão do Spring Boot
+EXPOSE 8080
+
+# Variáveis de ambiente via docker-compose
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
+
+# Comando de execução com suporte a JAVA_OPTS
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

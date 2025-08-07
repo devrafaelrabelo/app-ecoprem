@@ -1,9 +1,9 @@
 package com.controlcenter.auth.service;
 
 import com.controlcenter.auth.dto.RoleResponse;
-import com.controlcenter.auth.exception.InvalidRequestException;
-import com.controlcenter.auth.exception.InvalidRoleAssignmentException;
-import com.controlcenter.auth.exception.RoleNotFoundException;
+import com.controlcenter.exceptions.exception.InvalidRequestException;
+import com.controlcenter.exceptions.exception.InvalidRoleAssignmentException;
+import com.controlcenter.exceptions.exception.RoleNotFoundException;
 import com.controlcenter.auth.repository.RoleRepository;
 import com.controlcenter.entity.security.Role;
 import lombok.RequiredArgsConstructor;

@@ -48,4 +48,27 @@ INSERT INTO role_permission (role_id, permission_id) VALUES
   ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', '1f341bd9-264c-4c9c-b7f2-4c5b7f13b617'), -- computer:update
   ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', '9b73a26e-b39c-456f-8e25-d48b960e69fc'), -- computer:security
   ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', '72dd1916-8911-40ad-9967-4df83b3142f1'), -- computer:report
-  ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', 'e24cf6a1-92c2-4a44-b177-4b6f1a7ff377'); -- computer:audit
+  ('5f1d8a6b-98c2-41f4-b624-cb113f2ef0cc', 'e24cf6a1-92c2-4a44-b177-4b6f1a7ff377'), -- computer:audit
+
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', '89d82b44-8d3b-41ef-9cb8-1e7e98cc99f1'),
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', '7a7e3db2-cb14-408b-998f-c10b32a40c92'),
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', 'a6453a69-0c2e-4b58-a36b-e5c56a9d9a4c'),
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', 'cb9991aa-41be-4526-9a44-e6b4d926e981'),
+  ('c8ff92b1-1d23-4f09-b9f4-22e542b45700', 'b2cc1d8d-b9ae-4ae5-b581-061ce92bdb93'),
+
+  ('bce3c972-4ad2-41cd-b0d4-6fc11c6b2a99', '74ab62c2-99f7-460f-b9a2-1cdbf0461d00'), -- company:create
+  ('bce3c972-4ad2-41cd-b0d4-6fc11c6b2a99', '372d94de-f45c-4868-a846-6c2ce35f3d33'), -- company:update
+  ('bce3c972-4ad2-41cd-b0d4-6fc11c6b2a99', '83c9b3c0-7c9f-43f5-93a6-0a94a0f08455'), -- company:delete
+  ('bce3c972-4ad2-41cd-b0d4-6fc11c6b2a99', 'fd391a67-fd6f-47c4-90f7-f30e58f233fa'), -- company:read
+
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', '2781c8ab-f1a0-4f3a-9ad8-c16a3c120d40'), -- read
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', '39718e22-cf65-4bb8-a2e2-287453a2fc5f'), -- create
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', '4ad5a7b7-e45f-41ec-8e70-4574d3b33ad1'), -- update
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', '53b999b5-e306-4f7c-8c5d-7a4ef927eaf0'), -- delete
+  ('f76ea3d1-61f3-4b45-8a00-5d1f51b893fa', '61338791-6f2c-4be6-b4a3-f59f23a369cb'), -- assignManager
+
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', 'f8d2a918-7e1f-4dc2-b01c-c62ea9e4c101'), -- read
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', 'a4cd34e3-b0d3-4f1d-86f4-4b34e1252031'), -- create
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', '4b9d80c9-0d8a-4c5d-91f7-d47f85c6c028'), -- update
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', '8b792fbd-6a0a-4300-82ae-5decd6ab2bbf'), -- delete
+  ('1f9cb6a8-93c7-4c9a-baa2-772f16a7168f', 'd78e49cb-2b2c-42f9-bb91-29a4ae09c85a'); -- assign

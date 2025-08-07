@@ -1,6 +1,6 @@
 package com.controlcenter.resource.service;
 
-import com.controlcenter.auth.exception.UserNotFoundException;
+import com.controlcenter.exceptions.exception.*;
 import com.controlcenter.common.repository.CompanyRepository;
 import com.controlcenter.entity.common.Company;
 import com.controlcenter.entity.communication.CorporatePhone;
@@ -9,7 +9,6 @@ import com.controlcenter.enums.CarrierType;
 import com.controlcenter.enums.PhoneStatus;
 import com.controlcenter.enums.PlanType;
 import com.controlcenter.resource.dto.CorporatePhoneDTO;
-import com.controlcenter.resource.exception.*;
 import com.controlcenter.resource.repository.CorporatePhoneRepository;
 import com.controlcenter.user.repository.UserRepository;
 import jakarta.transaction.Transactional;

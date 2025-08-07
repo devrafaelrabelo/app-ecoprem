@@ -1,8 +1,8 @@
 package com.controlcenter.admin.controller;
 
 import com.controlcenter.admin.dto.AssignRoleRequest;
-import com.controlcenter.auth.exception.CustomAccessDeniedException;
 import com.controlcenter.entity.user.User;
+import com.controlcenter.exceptions.exception.CustomAccessDeniedException;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.user.service.UserRoleService;
 import io.swagger.v3.oas.annotations.Operation;

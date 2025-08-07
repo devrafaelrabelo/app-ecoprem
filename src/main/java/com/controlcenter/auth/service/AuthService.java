@@ -2,7 +2,6 @@ package com.controlcenter.auth.service;
 
 import com.controlcenter.auth.config.AuthProperties;
 import com.controlcenter.auth.dto.*;
-import com.controlcenter.auth.exception.*;
 import com.controlcenter.auth.repository.*;
 import com.controlcenter.auth.security.JwtTokenProvider;
 import com.controlcenter.auth.util.JwtCookieUtil;
@@ -10,6 +9,7 @@ import com.controlcenter.auth.util.LoginMetadataExtractor;
 import com.controlcenter.entity.auth.*;
 import com.controlcenter.entity.security.Permission;
 import com.controlcenter.entity.user.User;
+import com.controlcenter.exceptions.exception.*;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.user.service.UserService;
 import io.jsonwebtoken.Claims;

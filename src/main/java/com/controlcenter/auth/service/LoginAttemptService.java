@@ -1,8 +1,8 @@
 package com.controlcenter.auth.service;
 
 import com.controlcenter.auth.cache.AuthCacheRegistry;
-import com.controlcenter.auth.exception.AccountLockedException;
-import com.controlcenter.auth.exception.RateLimitExceededException;
+import com.controlcenter.exceptions.exception.AccountLockedException;
+import com.controlcenter.exceptions.exception.RateLimitExceededException;
 import com.controlcenter.user.repository.UserRepository;
 import com.controlcenter.entity.user.User;
 import com.github.benmanes.caffeine.cache.Cache;

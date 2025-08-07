@@ -1,10 +1,10 @@
 package com.controlcenter.auth.security;
 
 import com.controlcenter.auth.config.AuthPathProperties;
-import com.controlcenter.auth.exception.AuthenticationException;
 import com.controlcenter.auth.repository.ActiveSessionRepository;
 import com.controlcenter.auth.service.RevokedTokenService;
 import com.controlcenter.auth.util.JwtCookieUtil;
+import com.controlcenter.exceptions.exception.AuthenticationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

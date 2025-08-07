@@ -2,7 +2,7 @@ package com.controlcenter.core.audit.service;
 
 import com.controlcenter.core.audit.dto.RequestAuditLogDTO;
 import com.controlcenter.core.audit.repository.RequestAuditLogRepository;
-import com.controlcenter.core.exception.InvalidDateRangeException;
+import com.controlcenter.exceptions.exception.InvalidDateRangeException;
 import com.controlcenter.entity.audit.RequestAuditLog;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;

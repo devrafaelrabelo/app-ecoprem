@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS function (
     description TEXT,
     department_id UUID,
     CONSTRAINT fk_function_department FOREIGN KEY (department_id)
-        REFERENCES common.department(id)
+         REFERENCES common.department (id)
+         ON DELETE SET NULL
 );
 
 -- Tabela de junção: user_function (ManyToMany)

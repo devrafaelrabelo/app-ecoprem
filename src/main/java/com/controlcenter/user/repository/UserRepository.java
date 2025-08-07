@@ -1,5 +1,6 @@
 package com.controlcenter.user.repository;
 
+import com.controlcenter.entity.common.Position;
 import com.controlcenter.entity.user.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,7 +15,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
-    @Query("""
+    boolean existsByCpf(String cpf);
+    boolean existsByPosition(Position position);
+
+
+    @Query(""" 
     SELECT u FROM User u
         LEFT JOIN FETCH u.roles r
         LEFT JOIN FETCH r.permissions
@@ -103,5 +108,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     WHERE u.id = :id
 """)
     Optional<User> findByIdWithRolesAndPermissions(@Param("id") UUID id);
+
+
 
 }

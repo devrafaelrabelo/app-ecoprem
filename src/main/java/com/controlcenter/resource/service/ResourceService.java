@@ -4,7 +4,7 @@ import com.controlcenter.common.repository.CompanyRepository;
 import com.controlcenter.entity.resource.Resource;
 import com.controlcenter.entity.resource.ResourceStatus;
 import com.controlcenter.entity.resource.ResourceType;
-import com.controlcenter.resource.exception.*;
+import com.controlcenter.exceptions.exception.*;
 import com.controlcenter.entity.common.*;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.resource.dto.*;

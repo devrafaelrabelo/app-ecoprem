@@ -61,5 +61,28 @@ INSERT INTO permission (id, name, description) VALUES
   ('1f341bd9-264c-4c9c-b7f2-4c5b7f13b617', 'computer:update', 'Atualizar dados e alocar/desalocar'),
   ('9b73a26e-b39c-456f-8e25-d48b960e69fc', 'computer:security', 'Acessar informações de risco, segurança e incidentes'),
   ('72dd1916-8911-40ad-9967-4df83b3142f1', 'computer:report', 'Acessar relatórios e exportações'),
-  ('e24cf6a1-92c2-4a44-b177-4b6f1a7ff377', 'computer:audit', 'Acessar logs e rastreamento de acessos');
+  ('e24cf6a1-92c2-4a44-b177-4b6f1a7ff377', 'computer:audit', 'Acessar logs e rastreamento de acessos'),
+
+  ('89d82b44-8d3b-41ef-9cb8-1e7e98cc99f1', 'position:read', 'Permissão para visualizar cargos'),
+  ('7a7e3db2-cb14-408b-998f-c10b32a40c92', 'position:create', 'Permissão para criar cargos'),
+  ('a6453a69-0c2e-4b58-a36b-e5c56a9d9a4c', 'position:update', 'Permissão para editar cargos'),
+  ('cb9991aa-41be-4526-9a44-e6b4d926e981', 'position:delete', 'Permissão para remover cargos'),
+  ('b2cc1d8d-b9ae-4ae5-b581-061ce92bdb93', 'position:assign', 'Permissão para atribuir cargos a usuários'),
+
+  ('74ab62c2-99f7-460f-b9a2-1cdbf0461d00', 'company:create', 'Permissão para criar empresas'),
+  ('372d94de-f45c-4868-a846-6c2ce35f3d33', 'company:update', 'Permissão para editar empresas'),
+  ('83c9b3c0-7c9f-43f5-93a6-0a94a0f08455', 'company:delete', 'Permissão para remover empresas'),
+  ('fd391a67-fd6f-47c4-90f7-f30e58f233fa', 'company:read', 'Permissão para visualizar empresas'),
+
+  ('2781c8ab-f1a0-4f3a-9ad8-c16a3c120d40', 'department:read', 'Permissão para visualizar departamentos'),
+  ('39718e22-cf65-4bb8-a2e2-287453a2fc5f', 'department:create', 'Permissão para criar departamentos'),
+  ('4ad5a7b7-e45f-41ec-8e70-4574d3b33ad1', 'department:update', 'Permissão para editar departamentos'),
+  ('53b999b5-e306-4f7c-8c5d-7a4ef927eaf0', 'department:delete', 'Permissão para remover departamentos'),
+  ('61338791-6f2c-4be6-b4a3-f59f23a369cb', 'department:assignManager', 'Permissão para atribuir gerente a departamentos'),
+
+  ('f8d2a918-7e1f-4dc2-b01c-c62ea9e4c101', 'function:read', 'Permissão para visualizar funções'),
+  ('a4cd34e3-b0d3-4f1d-86f4-4b34e1252031', 'function:create', 'Permissão para criar funções'),
+  ('4b9d80c9-0d8a-4c5d-91f7-d47f85c6c028', 'function:update', 'Permissão para editar funções'),
+  ('8b792fbd-6a0a-4300-82ae-5decd6ab2bbf', 'function:delete', 'Permissão para remover funções'),
+  ('d78e49cb-2b2c-42f9-bb91-29a4ae09c85a', 'function:assign', 'Permissão para atribuir funções a usuários');
 

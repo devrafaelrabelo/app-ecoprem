@@ -1,6 +1,7 @@
 package com.controlcenter.admin.controller;
 
-import com.controlcenter.auth.dto.RegisterRequest;
+import com.controlcenter.admin.dto.RegisterRequest;
+import com.controlcenter.admin.dto.RegisterUser;
 import com.controlcenter.entity.user.User;
 import com.controlcenter.admin.service.AdminUserService;
 import com.controlcenter.user.dto.*;
@@ -21,7 +22,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Tag(
@@ -99,7 +99,7 @@ public class AdminUserController {
     })
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('user:create')")
-    public ResponseEntity<?> createUser(@AuthenticationPrincipal User adminUser, @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> createUser(@AuthenticationPrincipal User adminUser, @RequestBody RegisterUser request) {
         adminUserService.createUserByAdmin(request, adminUser);
         return ResponseEntity.ok("User created successfully.");
     }

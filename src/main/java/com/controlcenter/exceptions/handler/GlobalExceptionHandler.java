@@ -1,10 +1,8 @@
 package com.controlcenter.exceptions.handler;
 
-import com.controlcenter.auth.exception.*;
-import com.controlcenter.core.exception.*;
 import com.controlcenter.exceptions.dto.ApiError;
 import com.controlcenter.exceptions.enums.ErrorType;
-import com.controlcenter.resource.exception.*;
+import com.controlcenter.exceptions.exception.*;
 import com.sun.jdi.request.InvalidRequestStateException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.convert.ConversionFailedException;
